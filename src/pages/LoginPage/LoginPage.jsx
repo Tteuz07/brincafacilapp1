@@ -1,64 +1,56 @@
 import React, { useState } from 'react'
 import { Mail, ArrowRight, Star, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
-import { signInWithEmail, supabase } from '../../lib/supabase'
-import { checkPurchaseAccess, getLocalPurchaseAccess, clearLocalPurchaseAccess } from '../../lib/kirvano.js'
+import { signInWithEmail, checkEmailAccess, supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 
 const LoginPage = () => {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [purchaseStatus, setPurchaseStatus] = useState(null)
-  const [isCheckingPurchase, setIsCheckingPurchase] = useState(false)
+  const [emailStatus, setEmailStatus] = useState(null)
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
 
-  // Verificar status da compra quando o email mudar
-  const checkPurchaseStatus = async (emailToCheck) => {
+  // Verificar se o email tem acesso
+  const checkEmailAccessStatus = async (emailToCheck) => {
     if (!emailToCheck) {
-      setPurchaseStatus(null)
+      setEmailStatus(null)
       return
     }
 
-    setIsCheckingPurchase(true)
-    
+    setIsCheckingEmail(true)
     try {
-      // Sempre verificar na API para garantir dados atualizados
-      // Isso garante que o status seja sempre verificado quando o email mudar
-      const result = await checkPurchaseAccess(emailToCheck)
+      const hasAccess = await checkEmailAccess(emailToCheck)
       
-      setPurchaseStatus({
-        hasAccess: result.hasAccess,
-        purchaseData: result.purchaseData,
-        source: 'api'
+      setEmailStatus({
+        hasAccess: hasAccess,
+        source: 'supabase'
       })
-      
     } catch (error) {
-      console.error('Erro ao verificar status da compra:', error)
-      setPurchaseStatus({
+      console.error('Erro ao verificar email:', error)
+      setEmailStatus({
         hasAccess: false,
-        error: error.message,
-        source: 'error'
+        source: 'error',
+        error: error.message
       })
     } finally {
-      setIsCheckingPurchase(false)
+      setIsCheckingEmail(false)
     }
   }
 
   // Verificar se o email tem acesso antes de permitir login
   const canProceedWithLogin = () => {
     if (!email) return false
-    if (isCheckingPurchase) return false
-    if (!purchaseStatus) return false
-    return purchaseStatus.hasAccess === true
+    if (isCheckingEmail) return false
+    if (!emailStatus) return false
+    return emailStatus.hasAccess === true
   }
 
-  // Verificar compra quando email mudar
+  // Verificar email quando mudar
   React.useEffect(() => {
-    // Limpar status anterior e cache quando email mudar
-    setPurchaseStatus(null)
-    clearLocalPurchaseAccess()
+    setEmailStatus(null)
     
     if (email) {
       const timeoutId = setTimeout(() => {
-        checkPurchaseStatus(email)
+        checkEmailAccessStatus(email)
       }, 1000) // Aguardar 1 segundo após parar de digitar
       
       return () => clearTimeout(timeoutId)
@@ -75,8 +67,8 @@ const LoginPage = () => {
 
     // Verificação adicional de segurança
     if (!canProceedWithLogin()) {
-      if (purchaseStatus && !purchaseStatus.hasAccess) {
-        toast.error('Este email não possui acesso ao BrincaFácil. Faça uma compra para liberar o acesso.')
+      if (emailStatus && !emailStatus.hasAccess) {
+        toast.error('Este email não possui acesso ao BrincaFácil.')
       } else {
         toast.error('Aguarde a verificação do email ser concluída.')
       }
@@ -96,12 +88,10 @@ const LoginPage = () => {
         }
         console.error('Erro de login:', error)
       } else if (data?.user) {
-        // Login direto sem email - simular o processo de autenticação
         toast.success(`Bem-vindo(a)! Redirecionando...`)
         
         // Simular o processo de autenticação do Supabase
         setTimeout(() => {
-          // Disparar evento de mudança de autenticação manualmente
           window.dispatchEvent(new CustomEvent('supabase-auth-change', {
             detail: { 
               event: 'SIGNED_IN', 
@@ -185,13 +175,13 @@ const LoginPage = () => {
                   required
                 />
                 
-                {/* Indicador de verificação de compra */}
+                {/* Indicador de verificação de email */}
                 {email && (
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                    {isCheckingPurchase ? (
+                    {isCheckingEmail ? (
                       <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    ) : purchaseStatus ? (
-                      purchaseStatus.hasAccess ? (
+                    ) : emailStatus ? (
+                      emailStatus.hasAccess ? (
                         <CheckCircle className="text-green-500" size={20} />
                       ) : (
                         <XCircle className="text-red-500" size={20} />
@@ -201,26 +191,24 @@ const LoginPage = () => {
                 )}
               </div>
 
-              {/* Status da compra */}
-              {purchaseStatus && (
+              {/* Status do email */}
+              {emailStatus && (
                 <div className={`p-3 rounded-lg border ${
-                  purchaseStatus.hasAccess 
+                  emailStatus.hasAccess 
                     ? 'bg-green-50 border-green-200' 
                     : 'bg-red-50 border-red-200'
                 }`}>
                   <div className="flex items-center space-x-2">
-                    {purchaseStatus.hasAccess ? (
+                    {emailStatus.hasAccess ? (
                       <>
                         <CheckCircle className="text-green-600" size={18} />
                         <div className="flex-1">
                           <p className="text-green-800 text-sm font-medium">
-                            ✅ Acesso Confirmado
+                            ✅ Email Autorizado
                           </p>
-                          {purchaseStatus.purchaseData && (
-                            <p className="text-green-600 text-xs">
-                              Compra realizada em {new Date(purchaseStatus.purchaseData.created_at).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
+                          <p className="text-green-600 text-xs">
+                            Este email tem acesso ao BrincaFácil
+                          </p>
                         </div>
                       </>
                     ) : (
@@ -228,10 +216,10 @@ const LoginPage = () => {
                         <XCircle className="text-red-600" size={18} />
                         <div className="flex-1">
                           <p className="text-red-800 text-sm font-medium">
-                            ❌ Acesso não confirmado
+                            ❌ Email não autorizado
                           </p>
                           <p className="text-red-600 text-xs">
-                            Este email não possui compra ativa no sistema
+                            Este email não possui acesso ao sistema
                           </p>
                         </div>
                       </>
@@ -255,7 +243,7 @@ const LoginPage = () => {
                   <>
                     <span>
                       {!canProceedWithLogin() 
-                        ? purchaseStatus && !purchaseStatus.hasAccess
+                        ? emailStatus && !emailStatus.hasAccess
                           ? 'Acesso Negado'
                           : 'Verificando...'
                         : 'Entrar'
@@ -278,31 +266,31 @@ const LoginPage = () => {
                     Como funciona?
                   </p>
                   <p className="text-blue-600 text-xs leading-relaxed">
-                    Digite seu email para verificar se possui acesso. O sistema verifica automaticamente se você já fez uma compra na Kirvano. <strong>Nova verificação a cada mudança de email.</strong>
+                    Digite seu email para verificar se possui acesso. O sistema verifica automaticamente se você está na lista de emails autorizados.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Box de compra */}
-            {purchaseStatus && !purchaseStatus.hasAccess && (
+            {/* Box de contato */}
+            {emailStatus && !emailStatus.hasAccess && (
               <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
                 <div className="flex items-start space-x-3">
                   <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-orange-600 text-sm">🛒</span>
+                    <span className="text-orange-600 text-sm">📧</span>
                   </div>
                   <div>
                     <p className="text-orange-800 text-sm font-medium mb-1">
                       Precisa de acesso?
                     </p>
                     <p className="text-orange-600 text-xs leading-relaxed mb-2">
-                      Faça uma compra na nossa loja para liberar o acesso ao BrincaFácil Premium.
+                      Entre em contato conosco para solicitar acesso ao BrincaFácil.
                     </p>
                     <button
-                      onClick={() => window.open('/shop', '_blank')}
+                      onClick={() => window.open('/support', '_blank')}
                       className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors duration-200"
                     >
-                      Ir para a Loja
+                      Solicitar Acesso
                     </button>
                   </div>
                 </div>
