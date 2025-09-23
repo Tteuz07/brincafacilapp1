@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Mail, ArrowRight, Star, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
-import { signInWithEmail, checkEmailAccess, supabase } from '../../lib/supabase'
+import { signInWithEmail, checkUserAccess, getUserStatus, supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 
 const LoginPage = () => {
@@ -9,8 +9,8 @@ const LoginPage = () => {
   const [emailStatus, setEmailStatus] = useState(null)
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
 
-  // Verificar se o email tem acesso
-  const checkEmailAccessStatus = async (emailToCheck) => {
+  // Verificar status do usuário
+  const checkUserStatus = async (emailToCheck) => {
     if (!emailToCheck) {
       setEmailStatus(null)
       return
@@ -18,16 +18,18 @@ const LoginPage = () => {
 
     setIsCheckingEmail(true)
     try {
-      const hasAccess = await checkEmailAccess(emailToCheck)
+      const userStatus = await getUserStatus(emailToCheck)
       
       setEmailStatus({
-        hasAccess: hasAccess,
+        hasAccess: userStatus.status === 'approved',
+        status: userStatus.status,
         source: 'supabase'
       })
     } catch (error) {
-      console.error('Erro ao verificar email:', error)
+      console.error('Erro ao verificar usuário:', error)
       setEmailStatus({
         hasAccess: false,
+        status: 'error',
         source: 'error',
         error: error.message
       })
@@ -44,13 +46,13 @@ const LoginPage = () => {
     return emailStatus.hasAccess === true
   }
 
-  // Verificar email quando mudar
+  // Verificar usuário quando email mudar
   React.useEffect(() => {
     setEmailStatus(null)
     
     if (email) {
       const timeoutId = setTimeout(() => {
-        checkEmailAccessStatus(email)
+        checkUserStatus(email)
       }, 1000) // Aguardar 1 segundo após parar de digitar
       
       return () => clearTimeout(timeoutId)
@@ -191,11 +193,13 @@ const LoginPage = () => {
                 )}
               </div>
 
-              {/* Status do email */}
+              {/* Status do usuário */}
               {emailStatus && (
                 <div className={`p-3 rounded-lg border ${
                   emailStatus.hasAccess 
                     ? 'bg-green-50 border-green-200' 
+                    : emailStatus.status === 'pending'
+                    ? 'bg-yellow-50 border-yellow-200'
                     : 'bg-red-50 border-red-200'
                 }`}>
                   <div className="flex items-center space-x-2">
@@ -204,10 +208,22 @@ const LoginPage = () => {
                         <CheckCircle className="text-green-600" size={18} />
                         <div className="flex-1">
                           <p className="text-green-800 text-sm font-medium">
-                            ✅ Email Autorizado
+                            ✅ Pagamento Aprovado
                           </p>
                           <p className="text-green-600 text-xs">
-                            Este email tem acesso ao BrincaFácil
+                            Seu pagamento foi confirmado! Acesso liberado.
+                          </p>
+                        </div>
+                      </>
+                    ) : emailStatus.status === 'pending' ? (
+                      <>
+                        <AlertCircle className="text-yellow-600" size={18} />
+                        <div className="flex-1">
+                          <p className="text-yellow-800 text-sm font-medium">
+                            ⏳ Aguardando Aprovação
+                          </p>
+                          <p className="text-yellow-600 text-xs">
+                            Seu pagamento está sendo processado. Aguarde a confirmação.
                           </p>
                         </div>
                       </>
@@ -216,10 +232,10 @@ const LoginPage = () => {
                         <XCircle className="text-red-600" size={18} />
                         <div className="flex-1">
                           <p className="text-red-800 text-sm font-medium">
-                            ❌ Email não autorizado
+                            ❌ Pagamento Não Encontrado
                           </p>
                           <p className="text-red-600 text-xs">
-                            Este email não possui acesso ao sistema
+                            Este email não possui pagamento confirmado no sistema.
                           </p>
                         </div>
                       </>

@@ -14,30 +14,57 @@ export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabase
   }
 }) : null
 
-// Função simples para verificar se email tem acesso
-export const checkEmailAccess = async (email) => {
+// Função para verificar se usuário tem acesso aprovado
+export const checkUserAccess = async (email) => {
   try {
     if (supabase) {
       const { data, error } = await supabase
-        .from('authorized_emails')
-        .select('email')
+        .from('users')
+        .select('status')
         .eq('email', email)
-        .eq('active', true)
         .single()
       
       if (error && error.code !== 'PGRST116') {
         throw error
       }
       
-      return !!data
+      return data?.status === 'approved'
     }
     
     // Se não tiver Supabase, aceita alguns emails de teste
     const testEmails = ['demo@brincafacil.com', 'teste@exemplo.com', 'admin@brincafacil.com']
     return testEmails.includes(email.toLowerCase())
   } catch (error) {
-    console.error('Erro ao verificar acesso do email:', error)
+    console.error('Erro ao verificar acesso do usuário:', error)
     return false
+  }
+}
+
+// Função para verificar status do usuário (approved/pending)
+export const getUserStatus = async (email) => {
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('status, created_at, updated_at')
+        .eq('email', email)
+        .single()
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+      
+      return data || { status: 'not_found' }
+    }
+    
+    // Se não tiver Supabase, simula usuário aprovado
+    const testEmails = ['demo@brincafacil.com', 'teste@exemplo.com', 'admin@brincafacil.com']
+    return testEmails.includes(email.toLowerCase()) 
+      ? { status: 'approved' } 
+      : { status: 'not_found' }
+  } catch (error) {
+    console.error('Erro ao verificar status do usuário:', error)
+    return { status: 'error' }
   }
 }
 
