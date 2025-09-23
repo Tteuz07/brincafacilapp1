@@ -1,82 +1,37 @@
-// netlify/edge-functions/kirvano-webhook.js
-export default async (request, context) => {
-  console.log("=== NETLIFY EDGE FUNCTION WEBHOOK ===");
-  console.log("Método:", request.method);
-  console.log("Headers:", Object.fromEntries(request.headers));
+// Webhook super simples para Kirvano
+export default async (request) => {
+  // Log básico
+  console.log("WEBHOOK RECEBIDO:", new Date().toISOString());
   
-  try {
-    if (request.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Método não permitido" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    // Parse do body
-    const body = await request.json();
-    console.log("Body recebido:", body);
-
-    // Token esperado
-    const expectedToken = "brincafacil01";
-
-    // Captura possíveis formas de envio
-    const tokenHeader = request.headers.get("authorization")?.replace("Bearer ", "").trim();
-    const tokenBody = body?.token;
-    const tokenQuery = new URL(request.url).searchParams.get("token");
-
-    console.log("Tokens encontrados:", {
-      tokenHeader,
-      tokenBody,
-      tokenQuery,
-      expectedToken,
-    });
-
-    // Valida token
-    if (
-      tokenHeader === expectedToken ||
-      tokenBody === expectedToken ||
-      tokenQuery === expectedToken
-    ) {
-      console.log("✅ Token válido, processando webhook...");
-
-      // Dados recebidos
-      const { email, status } = body;
-      console.log("Dados da compra:", { email, status });
-
-      if (status === "compra_aprovada" && email) {
-        console.log(`🎉 Compra aprovada para: ${email}`);
-        
-        // Por enquanto, apenas retorna sucesso sem criar usuário
-        // TODO: Implementar criação de usuário no Supabase
-        console.log("✅ Webhook processado com sucesso (sem criação de usuário)");
-      }
-
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: "Webhook processado com sucesso",
-        data: { email, status },
-        note: "Usuário não foi criado no Supabase ainda"
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    console.log("❌ Token inválido ou ausente");
-    return new Response(JSON.stringify({ error: "Unauthorized - Token inválido" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" }
-    });
-
-  } catch (error) {
-    console.error("❌ Erro no webhook:", error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: "Erro interno do servidor",
-      details: error.message 
+  // Só aceita POST
+  if (request.method !== "POST") {
+    return new Response("Método não permitido", { status: 405 });
+  }
+  
+  // Pega o body
+  const body = await request.json();
+  console.log("DADOS RECEBIDOS:", body);
+  
+  // Pega o token
+  const token = request.headers.get("authorization")?.replace("Bearer ", "") || body?.token;
+  
+  // Token simples
+  if (token === "brincafacil01") {
+    console.log("✅ TOKEN VÁLIDO!");
+    console.log("📧 EMAIL:", body.email);
+    console.log("📊 STATUS:", body.status);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Webhook funcionando!",
+      email: body.email,
+      status: body.status
     }), {
-      status: 500,
+      status: 200,
       headers: { "Content-Type": "application/json" }
     });
   }
+  
+  console.log("❌ TOKEN INVÁLIDO:", token);
+  return new Response("Token inválido", { status: 401 });
 };
