@@ -1,0 +1,42 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FF7A00"/>
+  
+  <!-- Inner circle with gradient -->
+  <circle cx="256" cy="256" r="200" fill="url(#gradient)"/>
+  
+  <!-- Target icon -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="white" stroke-width="12"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="white" stroke-width="12"/>
+  <circle cx="256" cy="256" r="80" fill="none" stroke="white" stroke-width="12"/>
+  <circle cx="256" cy="256" r="40" fill="white"/>
+  
+  <!-- Fun elements -->
+  <circle cx="180" cy="150" r="15" fill="#FDE047"/>
+  <circle cx="350" cy="180" r="12" fill="#FDE047"/>
+  <circle cx="160" cy="320" r="18" fill="#FDE047"/>
+  <circle cx="380" cy="350" r="14" fill="#FDE047"/>
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF8A00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6A00;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
