@@ -4,10 +4,13 @@
 [functions]
   node_bundler = "esbuild"
 
-[[redirects]]
-  from = "/api/kirvano-webhook"
-  to = "/.netlify/functions/kirvano-webhook"
-  status = 200
+[[edge_functions]]
+  function = "kirvano-webhook"
+  path = "/api/kirvano-webhook"
 
 [build.environment]
   KIRVANO_TOKEN = "brincafacil01"
+
+[[edge_functions]]
+function = "hello"
+path = "/test"

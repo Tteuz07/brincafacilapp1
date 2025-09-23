@@ -24,3 +24,4 @@ COMMENT ON COLUMN payments.status IS 'Status do pagamento (PAID, PENDING, etc.)'
 COMMENT ON COLUMN payments.raw_payload IS 'Payload completo do webhook';
 
 
+
