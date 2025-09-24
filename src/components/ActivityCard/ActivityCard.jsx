@@ -190,9 +190,9 @@ const ActivityCard = ({ activity, compact = false }) => {
                 
                 {/* Badge Premium/Normal */}
                 {activity.video_url ? (
-                  <span className="px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg flex items-center space-x-1">
+                  <span className="px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg flex items-center space-x-1">
                     <span>🎬</span>
-                    <span>PREMIUM</span>
+                    <span>COM VÍDEO</span>
                   </span>
                 ) : (
                   <span className="px-2 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg flex items-center space-x-1">

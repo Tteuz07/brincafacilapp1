@@ -45,99 +45,60 @@ function App() {
   })
 
   useEffect(() => {
-    // Verificar sessão atual
-    const checkSession = async () => {
+    // Verificar se há usuário salvo no localStorage
+    const checkStoredUser = async () => {
       try {
-        if (supabase) {
-          const { data: { session } } = await supabase.auth.getSession()
-          setUser(session?.user || null)
+        // Sempre iniciar deslogado no deploy
+        const storedUser = localStorage.getItem('brincafacil-user')
+        const storedChild = localStorage.getItem('brincafacil-child')
+        
+        if (storedUser && storedChild) {
+          const user = JSON.parse(storedUser)
+          const child = JSON.parse(storedChild)
           
-          if (session?.user) {
-            await initializeApp()
-          }
+          console.log('👤 USUÁRIO ENCONTRADO NO LOCALSTORAGE:', user)
+          setUser(user)
+          setChild(child)
+          await initializeApp()
         } else {
-          console.warn('🎯 BrincaFácil - Modo Demonstração')
-          console.log('Para configurar o Supabase:')
-          console.log('1. Crie uma conta em supabase.com')
-          console.log('2. Configure as variáveis de ambiente')
-          console.log('3. Execute o script database-setup.sql')
-          
-          // No modo demonstração, criar um usuário fictício
-          const demoUser = {
-            id: 'demo-user-123',
-            email: 'demo@brincafacil.com',
-            user_metadata: {
-              name: 'Usuário Demo'
-            }
-          }
-          
-          console.log('👤 CRIANDO USUÁRIO DEMO:', demoUser)
-          setUser(demoUser)
-          
-          // Criar perfil da criança demo
-          const demoChild = {
-            id: 'demo-child-123',
-            name: 'Mateus',
-            age: 5,
-            avatar: '🧒',
-            interests: ['brincadeiras', 'desenhos'],
-            space: 'casa',
-            companionship: 'sozinho'
-          }
-          
-          console.log('👶 CRIANDO PERFIL DEMO DA CRIANÇA:', demoChild)
-          // Simular carregamento do perfil da criança
-          setTimeout(() => {
-            const { setChild } = useAppStore.getState()
-            setChild(demoChild)
-          }, 1000)
+          console.log('🔐 NENHUM USUÁRIO SALVO - INICIANDO DESLOGADO')
+          setUser(null)
         }
       } catch (error) {
-        console.error('Erro ao verificar sessão:', error)
+        console.error('Erro ao verificar usuário salvo:', error)
+        setUser(null)
       } finally {
         setLoading(false)
       }
     }
 
-    checkSession()
+    checkStoredUser()
 
-    // Listener para mudanças de autenticação (apenas se Supabase estiver configurado)
-    let subscription = null
-    
-    if (supabase) {
-      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          setUser(session?.user || null)
-          
-          if (session?.user) {
-            await initializeApp()
-          }
-          
-          setLoading(false)
-        }
-      )
-      subscription = sub
-    }
-
-    // Listener para autenticação customizada (modo demonstração)
-    const handleCustomAuth = async (event) => {
-      console.log('🔐 HANDLE CUSTOM AUTH:', event.detail)
-      const { session } = event.detail
-      if (session?.user) {
-        console.log('👤 USUÁRIO ENCONTRADO NO CUSTOM AUTH:', session.user)
-        setUser(session.user)
+    // Listener para mudanças de autenticação via localStorage
+    const handleAuthChange = async (event) => {
+      console.log('🔐 HANDLE AUTH CHANGE:', event.detail)
+      const { user, child } = event.detail
+      
+      if (user && child) {
+        console.log('👤 USUÁRIO LOGADO VIA EVENT:', user)
+        setUser(user)
+        setChild(child)
         await initializeApp()
+      } else {
+        console.log('👤 USUÁRIO DESLOGADO VIA EVENT')
+        setUser(null)
+        setChild(null)
+        // Limpar localStorage
+        localStorage.removeItem('brincafacil-user')
+        localStorage.removeItem('brincafacil-child')
       }
       setLoading(false)
     }
 
-    window.addEventListener('supabase-auth-change', handleCustomAuth)
+    window.addEventListener('brincafacil-auth-change', handleAuthChange)
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe()
-      }
-      window.removeEventListener('supabase-auth-change', handleCustomAuth)
+      window.removeEventListener('brincafacil-auth-change', handleAuthChange)
     }
   }, [setUser, setLoading, initializeApp])
 

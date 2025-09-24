@@ -64,15 +64,22 @@ const useAppStore = create(
       setLoading: (isLoading) => set({ isLoading }),
       
       logout: async () => {
-        if (supabase) {
-          await supabase.auth.signOut()
-        }
+        // Limpar localStorage
+        localStorage.removeItem('brincafacil-user')
+        localStorage.removeItem('brincafacil-child')
+        
+        // Limpar estado
         set({ 
           user: null, 
           isAuthenticated: false,
           child: null,
           favorites: []
         })
+        
+        // Disparar evento de logout
+        window.dispatchEvent(new CustomEvent('brincafacil-auth-change', {
+          detail: { user: null, child: null }
+        }))
       },
 
       // Actions do perfil da criança
@@ -358,11 +365,11 @@ const useAppStore = create(
         if (!user) return { error: 'Usuário não autenticado' }
         
         if (!supabase) {
-          // Modo demonstração - salvar localmente
+          // Salvar localmente
           console.warn('Supabase não configurado - salvando localmente')
           const childWithId = { 
             ...childData, 
-            id: 'demo-child-' + Date.now(),
+            id: 'child-' + Date.now(),
             user_id: user.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -405,7 +412,7 @@ const useAppStore = create(
           console.log('🔄 FORÇANDO ATUALIZAÇÃO DAS ATIVIDADES')
           
           
-          // Atividades disponíveis - incluindo as novas premium
+          // Atividades disponíveis
           const demoActivities = [
             {
               id: 1,
@@ -1006,7 +1013,7 @@ const useAppStore = create(
             {
               id: 20,
               title: 'Encaixe das Caixas de Ovos',
-              description: 'Brincadeira premium onde as crianças precisam encaixar formas coloridas cortadas de caixas de ovos nas pontas correspondentes. Desenvolve raciocínio lógico, reconhecimento de cores, coordenação motora fina e resolução de problemas.',
+              description: 'Brincadeira onde as crianças precisam encaixar formas coloridas cortadas de caixas de ovos nas pontas correspondentes. Desenvolve raciocínio lógico, reconhecimento de cores, coordenação motora fina e resolução de problemas.',
               instructions: [
                 'Apresente a caixa de ovos com pontas coloridas para a criança',
                 'Mostre as formas cortadas de cores correspondentes',
@@ -1599,6 +1606,787 @@ const useAppStore = create(
               image_url: '/Brincadeiras/vareta.png',
               active: true,
               created_at: new Date().toISOString()
+            },
+            {
+              id: 36,
+              title: 'Pescador de Argolas',
+              description: 'Brincadeira divertida onde as crianças usam palitos para pescar argolas coloridas e encaixá-las em torres. Desenvolve foco, coordenação motora fina, paciência e agilidade.',
+              instructions: [
+                'Crie as argolas cortando tiras de cartolina colorida com 2 cm de largura',
+                'Junte as pontas de cada tira para formar círculos e prenda com fita adesiva',
+                'Prepare as torres usando 2 rolos de papel toalha',
+                'Faça a base cortando quadrados de papelão (15x15 cm) e cole o fundo de cada rolo no centro',
+                'Coloque as duas torres na mesa com espaço entre elas',
+                'Espalhe todas as argolas coloridas pela mesa',
+                'Cada jogador pega um palito e escolhe uma cor de argola',
+                'Ao sinal de "JÁ!", cada jogador usa apenas o palito para pescar uma argola da sua cor',
+                'Com a argola equilibrada no palito, leve-a até sua torre e encaixe por cima',
+                'Não pode usar as mãos para ajudar! Se a argola cair, pesque de novo',
+                'O vencedor é quem conseguir colocar todas as suas argolas na torre primeiro!'
+              ],
+              materials: [
+                '2 rolos de papel toalha (ou 4 rolos de papel higiênico emendados)',
+                'Cartolina ou papel colorido de duas cores diferentes (ex: verde e azul)',
+                'Tesoura sem ponta',
+                'Fita adesiva ou cola',
+                '2 palitos longos (churrasco, hashi ou galho fino e reto)',
+                'Papelão para fazer a base (caixa velha)',
+                'Mesa para brincar'
+              ],
+              categories: ['coordenação', 'foco', 'competição', 'motor', 'paciência'],
+              duration: 10,
+              participants: '2-4',
+              difficulty: 'medium',
+              min_age: 4,
+              max_age: 10,
+              rating: 4.7,
+              safety_tips: [
+                'Supervisione o uso dos palitos para evitar acidentes',
+                'Certifique-se de que as pontas dos palitos não estão afiadas',
+                'Use palitos com pontas cortadas ou arredondadas',
+                'Mantenha o espaço da mesa livre de obstáculos',
+                'Verifique se as torres estão bem fixadas na base'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem coloca mais argolas em 1 minuto',
+                'Versão cooperativa: trabalhem juntos para colocar todas as argolas',
+                'Versão com cores diferentes: cada cor vale pontos diferentes',
+                'Versão com obstáculos: coloque pequenos obstáculos no caminho',
+                'Versão com argolas menores: aumente a dificuldade usando argolas menores'
+              ],
+              image_url: '/Brincadeiras/1..png',
+              video_url: '/Brincadeiras/1.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 37,
+              title: 'Código das Cores',
+              description: 'Brincadeira educativa onde as crianças devem reproduzir padrões de cores usando bolinhas e copos. Desenvolve raciocínio lógico, reconhecimento de padrões, percepção espacial, concentração e associação de cores.',
+              instructions: [
+                'Observe o padrão de cores no "cartão de código"',
+                'Pegue as bolinhas coloridas uma por uma',
+                'Coloque cada bolinha no copo correspondente à posição do código',
+                'Se o círculo no canto superior esquerdo do código for azul, coloque uma bolinha azul no copo do canto superior esquerdo',
+                'Continue até reproduzir todo o padrão do código',
+                'Verifique se todas as posições estão corretas',
+                'Termine quando conseguir copiar o código perfeitamente!',
+                'Troque o cartão de código para um novo desafio'
+              ],
+              materials: [
+                '1 pedaço de papelão grande para o painel (aprox. 50x50 cm)',
+                '1 pedaço de papelão menor para o "código" (aprox. 30x20 cm)',
+                '9 copos brancos (de papel ou plástico)',
+                'Bolinhas de plástico coloridas (como as de piscina de bolinhas)',
+                'Papel colorido ou EVA nas mesmas cores das bolinhas',
+                'Cola forte ou pistola de cola quente (usar com a ajuda de um adulto)',
+                'Tesoura',
+                'Fita adesiva dupla-face para fixar na parede (opcional)',
+                'Velcro (opcional, para códigos intercambiáveis)'
+              ],
+              categories: ['lógica', 'padrões', 'espacial', 'concentração', 'educativo', 'cognitivo'],
+              duration: 15,
+              participants: '1',
+              difficulty: 'medium',
+              min_age: 4,
+              max_age: 10,
+              rating: 4.8,
+              safety_tips: [
+                'Supervisione o uso da tesoura e cola quente por adultos apenas',
+                'Certifique-se de que as bolinhas são grandes o suficiente para não serem engolidas',
+                'Use materiais atóxicos e seguros',
+                'Verifique se o painel está bem fixado para evitar quedas',
+                'Mantenha o espaço organizado para evitar tropeços'
+              ],
+              variations: [
+                'Versão com velcro: use círculos intercambiáveis para criar infinitos códigos',
+                'Versão cronômetro: veja quem consegue completar mais rápido',
+                'Versão cooperativa: trabalhem juntos para resolver códigos complexos',
+                'Versão com mais cores: aumente a dificuldade usando mais cores diferentes',
+                'Versão com padrões sequenciais: crie códigos que seguem uma sequência lógica',
+                'Versão com códigos 3D: use diferentes alturas ou tamanhos de bolinhas'
+              ],
+              image_url: '/Brincadeiras/2..png',
+              video_url: '/Brincadeiras/2.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 38,
+              title: 'Encaixe das Cores',
+              description: 'Brincadeira educativa onde as crianças devem encaixar argolas coloridas nos palitos correspondentes. Desenvolve associação de cores, coordenação motora fina, movimento de pinça e concentração.',
+              instructions: [
+                'Coloque a caixa-tabuleiro na frente da criança',
+                'Espalhe todas as argolas coloridas ao lado da caixa',
+                'Peça para a criança pegar uma argola',
+                'Identifique a cor da argola escolhida',
+                'Encontre o palito (poste) da cor correspondente na caixa',
+                'Encaixe a argola no palito da cor certa',
+                'Continue com as próximas argolas',
+                'Termine quando todas as argolas estiverem encaixadas nos lugares corretos!'
+              ],
+              materials: [
+                '1 tampa de caixa de sapatos (ou outra caixa rasa)',
+                'Palitos de picolé coloridos (ou palitos de madeira natural para pintar)',
+                'Argolas coloridas (podem ser de plástico ou feitas com limpadores de cachimbo/chenille)',
+                'Pistola de cola quente (essencial para fixar bem os palitos)',
+                'Tinta guache e pincel (caso use palitos sem cor)',
+                'Barbante e um furador (opcional, para criar o "labirinto" no meio)',
+                'Limpadores de cachimbo/chenille (para fazer argolas caseiras)'
+              ],
+              categories: ['cores', 'coordenação', 'pinça', 'concentração', 'educativo', 'motor'],
+              duration: 10,
+              participants: '1',
+              difficulty: 'easy',
+              min_age: 2,
+              max_age: 6,
+              rating: 4.7,
+              safety_tips: [
+                'Supervisione o uso da pistola de cola quente por adultos apenas',
+                'Certifique-se de que as argolas são grandes o suficiente para não serem engolidas',
+                'Use materiais atóxicos e seguros',
+                'Verifique se os palitos estão bem fixados para evitar machucados',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Use argolas de plástico flexível para evitar cortes'
+              ],
+              variations: [
+                'Versão com labirinto: adicione barbante entre os palitos para criar obstáculos',
+                'Versão cronômetro: veja quem consegue encaixar todas as argolas mais rápido',
+                'Versão cooperativa: trabalhem juntos para completar o desafio',
+                'Versão com mais cores: aumente a dificuldade usando mais cores diferentes',
+                'Versão com argolas de tamanhos diferentes: use argolas pequenas e grandes',
+                'Versão com sequência: crie uma ordem específica para encaixar as argolas'
+              ],
+              image_url: '/Brincadeiras/3..png',
+              video_url: '/Brincadeiras/3.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 39,
+              title: 'Circuito das Cores',
+              description: 'Brincadeira ativa onde as crianças correm ao redor de um bambolê para associar bolinhas coloridas com suas bases correspondentes. Desenvolve reconhecimento de cores, coordenação motora ampla, agilidade e percepção espacial.',
+              instructions: [
+                'Posicione-se ao lado do monte de bolinhas coloridas',
+                'Pegue uma bolinha de cada vez (ex: bolinha amarela)',
+                'Ande ou corra ao redor do bambolê',
+                'Encontre o círculo da mesma cor no chão dentro do bambolê',
+                'Coloque a bolinha no copo posicionado em frente ao círculo correspondente',
+                'Volte correndo para o monte de bolinhas',
+                'Pegue uma nova bolinha de outra cor',
+                'Repita o processo até todas as bolinhas estarem em suas bases corretas!'
+              ],
+              materials: [
+                '1 bambolê',
+                'Bolinhas de plástico coloridas (como as de piscina)',
+                'Copos de plástico transparentes ou brancos (mesma quantidade de cores)',
+                'Folhas de EVA ou cartolina das mesmas cores das bolinhas',
+                'Tesoura',
+                'Cronômetro (opcional, para competições)',
+                'Espaço aberto para correr'
+              ],
+              categories: ['cores', 'coordenação', 'agilidade', 'espacial', 'físico', 'competição'],
+              duration: 10,
+              participants: '1-2',
+              difficulty: 'medium',
+              min_age: 3,
+              max_age: 8,
+              rating: 4.9,
+              safety_tips: [
+                'Certifique-se de que o espaço ao redor do bambolê esteja livre de obstáculos',
+                'Use bolinhas grandes o suficiente para não serem engolidas',
+                'Supervisione as crianças durante a corrida para evitar colisões',
+                'Verifique se o chão não está escorregadio',
+                'Mantenha distância segura entre os participantes em versões com 2 jogadores',
+                'Use materiais atóxicos e seguros'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue completar o circuito mais rápido',
+                'Versão com dois circuitos: cada criança tem seu próprio circuito',
+                'Versão cooperativa: trabalhem juntos para completar um circuito maior',
+                'Versão com obstáculos: adicione pequenos obstáculos no caminho',
+                'Versão com sequência: crie uma ordem específica para pegar as bolinhas',
+                'Versão com mais cores: aumente a dificuldade usando mais cores diferentes'
+              ],
+              image_url: '/Brincadeiras/5..png',
+              video_url: '/Brincadeiras/5.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 40,
+              title: 'Pebolim de Caixa',
+              description: 'Brincadeira esportiva onde as crianças constroem e jogam um pebolim caseiro usando caixa de sapatos e palitos. Desenvolve coordenação motora, agilidade, raciocínio rápido, estratégia e socialização.',
+              instructions: [
+                'Cada jogador escolhe um lado do campo e controla os palitos correspondentes',
+                'Coloque a bolinha no meio do campo para começar a partida',
+                'Mova os palitos para os lados e gire-os para que as tampinhas "chutem" a bola',
+                'O objetivo é marcar um gol, fazendo a bolinha entrar na tampa maior do adversário',
+                'Use seus jogadores para defender seu gol quando não estiver com a bola',
+                'Defina um placar para terminar o jogo (ex: quem fizer 5 gols primeiro, ganha!)',
+                'Celebre cada gol marcado!',
+                'Jogue com fair play e divirta-se!'
+              ],
+              materials: [
+                '1 caixa de sapatos de papelão resistente (sem tampa)',
+                '6 a 8 palitos de churrasco',
+                'Tampinhas de garrafa PET (pelo menos 10, de 2 cores diferentes para os times)',
+                '2 tampas de plástico maiores (de amaciante, Nescau, etc.) para os gols',
+                '1 bolinha pequena e leve (de desodorante roll-on, gude ou papel amassado)',
+                'Pistola de cola quente',
+                'Estilete ou faca de ponta fina (para ser usado APENAS por um adulto)',
+                'Marcador para fazer os furos'
+              ],
+              categories: ['coordenação', 'agilidade', 'estratégia', 'socialização', 'esportivo', 'competição'],
+              duration: 15,
+              participants: '2',
+              difficulty: 'medium',
+              min_age: 5,
+              max_age: 12,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso do estilete e pistola de cola quente por adultos apenas',
+                'Certifique-se de que os palitos não tenham pontas afiadas',
+                'Use bolinhas leves para evitar machucados',
+                'Verifique se a caixa está bem montada antes de jogar',
+                'Mantenha o espaço de jogo livre de obstáculos',
+                'Ensine sobre fair play e respeito entre os jogadores'
+              ],
+              variations: [
+                'Versão com mais jogadores: adicione mais fileiras de palitos',
+                'Versão cronômetro: jogue por tempo determinado (ex: 10 minutos)',
+                'Versão com obstáculos: adicione pequenos obstáculos no campo',
+                'Versão com diferentes tamanhos de bolinha: varie a dificuldade',
+                'Versão torneio: organize um campeonato entre várias duplas',
+                'Versão com regras especiais: crie regras próprias para tornar mais divertido'
+              ],
+              image_url: '/Brincadeiras/6..png',
+              video_url: '/Brincadeiras/6.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 41,
+              title: 'Labirinto dos Túneis',
+              description: 'Brincadeira de precisão onde as crianças devem guiar uma bolinha através de túneis inclinando cuidadosamente uma caixa. Desenvolve equilíbrio, coordenação motora fina, concentração, paciência e percepção de causa e efeito.',
+              instructions: [
+                'Segure a caixa com as duas mãos, mantendo-a na horizontal',
+                'Incline a caixa com cuidado para cima, para baixo e para os lados',
+                'Guie o movimento da bolinha através dos túneis',
+                'Faça a bolinha passar pelo primeiro túnel',
+                'Continue guiando para o segundo túnel',
+                'Complete o percurso passando pelo terceiro túnel',
+                'Se a bolinha não passar pelo túnel, volte e tente novamente',
+                'Celebre quando conseguir completar todo o percurso!'
+              ],
+              materials: [
+                '1 tampa de caixa de sapatos (ou uma caixa de papelão rasa)',
+                '3 rolos de papel higiênico vazios',
+                '1 bolinha pequena que passe por dentro dos rolos (de gude, pingue-pongue, ou uma que pule)',
+                'Cola (branca, de silicone ou quente)',
+                'Cronômetro (opcional, para cronometrar o tempo)',
+                'Mesa ou superfície plana para apoiar'
+              ],
+              categories: ['equilíbrio', 'coordenação', 'concentração', 'paciência', 'causa-efeito', 'precisão'],
+              duration: 10,
+              participants: '1',
+              difficulty: 'medium',
+              min_age: 3,
+              max_age: 10,
+              rating: 4.8,
+              safety_tips: [
+                'Supervisione o uso da cola por adultos apenas',
+                'Certifique-se de que a bolinha é grande o suficiente para não ser engolida',
+                'Verifique se os rolos estão bem colados para evitar acidentes',
+                'Use uma superfície estável para apoiar a caixa',
+                'Mantenha o espaço livre de obstáculos',
+                'Ensine sobre paciência e persistência'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue completar o percurso mais rápido',
+                'Versão com mais túneis: adicione mais rolos para aumentar a dificuldade',
+                'Versão com túneis em posições diferentes: crie labirintos mais complexos',
+                'Versão com bolinhas diferentes: use bolinhas de tamanhos e pesos variados',
+                'Versão cooperativa: trabalhem juntos para guiar a bolinha',
+                'Versão com obstáculos: adicione pequenos obstáculos no caminho'
+              ],
+              image_url: '/Brincadeiras/7..png',
+              video_url: '/Brincadeiras/7.2.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 42,
+              title: 'Caixa-Cascata',
+              description: 'Brincadeira estratégica onde as crianças controlam palitos para influenciar o caminho de uma bolinha que cai através de obstáculos. Desenvolve raciocínio estratégico, coordenação motora fina, antecipação, paciência e noção de causa e efeito.',
+              instructions: [
+                'Pegue o pompom e solte-o no furo de entrada no topo da caixa',
+                'Observe como o pompom cai, quicando e desviando nas tampinhas',
+                'Empurre e puxe as varetas (palitos) para mudar a posição das tampinhas',
+                'Tente influenciar o caminho do pompom durante a queda',
+                'Objetivo: fazer o pompom cair dentro de uma das cestas coloridas no fundo',
+                'Se acertar uma cesta, marque os pontos correspondentes',
+                'Se errar, passe a vez para o próximo jogador',
+                'Ganha quem tiver a maior pontuação após o número combinado de rodadas!'
+              ],
+              materials: [
+                '1 caixa de papelão alta (como de botas, ou algum item grande)',
+                'Vários palitos de churrasco (cerca de 10 a 12)',
+                'Várias tampinhas de garrafa PET (para serem os obstáculos)',
+                '3 ou 4 tampas de plástico maiores e coloridas (para serem os alvos/cestas)',
+                '1 pompom pequeno, uma miçanga grande ou bolinha de papel amassado',
+                'Estilete (para ser usado APENAS por um adulto)',
+                'Pistola de cola quente',
+                'Canetinhas coloridas (opcional, para decorar e marcar os palitos)',
+                'Papel e caneta para marcar a pontuação'
+              ],
+              categories: ['estratégia', 'coordenação', 'antecipação', 'paciência', 'causa-efeito', 'competição'],
+              duration: 15,
+              participants: '1+',
+              difficulty: 'hard',
+              min_age: 6,
+              max_age: 12,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso do estilete e pistola de cola quente por adultos apenas',
+                'Certifique-se de que o pompom é grande o suficiente para não ser engolido',
+                'Verifique se os palitos não têm pontas afiadas',
+                'Use uma superfície estável para apoiar a caixa',
+                'Mantenha o espaço livre de obstáculos',
+                'Ensine sobre paciência e estratégia'
+              ],
+              variations: [
+                'Versão com pontuação diferente: cada cesta vale pontos diferentes',
+                'Versão cronômetro: veja quem consegue mais pontos em tempo determinado',
+                'Versão cooperativa: trabalhem juntos para conseguir a maior pontuação',
+                'Versão com mais obstáculos: adicione mais tampinhas para aumentar a dificuldade',
+                'Versão com diferentes tamanhos de pompom: varie o desafio',
+                'Versão torneio: organize um campeonato entre vários jogadores'
+              ],
+              image_url: '/Brincadeiras/8..png',
+              video_url: '/Brincadeiras/8.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 43,
+              title: 'Estrada da Soma',
+              description: 'Brincadeira educativa que ensina matemática de forma divertida usando uma estrada numerada e um carrinho deslizante. Desenvolve conceitos de adição, contagem, reconhecimento de números, coordenação motora fina e resolução de problemas.',
+              instructions: [
+                'Modo 1 - Com Dados: Jogue os dois dados e escreva os números nos quadrados da equação',
+                'Posicione o carrinho no ponto "zero" (antes do número 1)',
+                'Dirija o carrinho pelo primeiro número de espaços na estrada',
+                'A partir do número onde parou, dirija pelo segundo número de espaços',
+                'O carrinho vai parar no resultado da soma!',
+                'Escreva o resultado no quadrado da equação',
+                'Apague tudo e comece uma nova conta!',
+                'Modo 2 - Contas Prontas: Resolva contas escritas por um adulto usando o mesmo método'
+              ],
+              materials: [
+                '1 pedaço de papelão retangular e comprido',
+                'Canetão permanente preto',
+                'Canetão para quadro branco (apagável) e um pequeno apagador ou pano',
+                'Fita adesiva larga e transparente',
+                'Barbante',
+                'Papel, tesoura e lápis de cor para fazer o carrinho',
+                'Cola',
+                '2 dados (opcional)',
+                'Furadeira ou estilete (para fazer os furos)'
+              ],
+              categories: ['matemática', 'adição', 'números', 'coordenação', 'educativo', 'cognitivo'],
+              duration: 20,
+              participants: '1-2',
+              difficulty: 'medium',
+              min_age: 4,
+              max_age: 10,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso de ferramentas pontiagudas por adultos apenas',
+                'Certifique-se de que o barbante está bem fixado para evitar acidentes',
+                'Use materiais atóxicos e seguros',
+                'Verifique se o carrinho desliza suavemente pelo barbante',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na resolução de problemas'
+              ],
+              variations: [
+                'Versão com subtração: use a estrada para ensinar subtração',
+                'Versão cronômetro: veja quem resolve mais contas em tempo determinado',
+                'Versão cooperativa: trabalhem juntos para resolver as contas',
+                'Versão com números maiores: estenda a estrada até 20 ou mais',
+                'Versão com multiplicação: adapte para ensinar multiplicação',
+                'Versão com contas de três números: adicione mais quadrados na equação'
+              ],
+              image_url: '/Brincadeiras/9..png',
+              video_url: '/Brincadeiras/9.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 44,
+              title: 'Carrinho Foguete a Ar',
+              description: 'Brincadeira de engenharia onde as crianças constroem um carrinho movido a ar usando balão e canudo. Desenvolve criatividade, noções de engenharia, compreensão de princípios da física (Ação e Reação - 3ª Lei de Newton) e habilidades manuais.',
+              instructions: [
+                'Fure a garrafinha para criar os eixos (2 furos na frente, 2 atrás)',
+                'Fure o centro de cada tampinha para as rodas',
+                'Monte a suspensão passando os palitos pelos furos e encaixando as tampinhas',
+                'Crie o motor encaixando a boca do balão na ponta do canudo',
+                'Vede bem com fita adesiva para o ar não escapar',
+                'Cole o canudo com balão em cima da garrafinha apontando para trás',
+                'Assopre pela ponta livre do canudo até encher bem o balão',
+                'Tape a ponta do canudo com o dedo para segurar o ar',
+                'Faça a contagem regressiva... 3... 2... 1...',
+                'Tire o dedo e veja seu carrinho disparar!'
+              ],
+              materials: [
+                '1 garrafinha plástica pequena (de iogurte líquido, por exemplo)',
+                '4 tampinhas de garrafa PET (para as rodas)',
+                '2 palitos de churrasco (para os eixos)',
+                '1 canudo (de preferência um pouco mais rígido)',
+                '1 balão (bexiga)',
+                'Fita adesiva',
+                'Tesoura',
+                '1 objeto pontiagudo para furar (como um prego ou a ponta da tesoura)',
+                'Superfície lisa para as corridas'
+              ],
+              categories: ['criatividade', 'engenharia', 'física', 'manuais', 'competição', 'ciência'],
+              duration: 15,
+              participants: '1+',
+              difficulty: 'hard',
+              min_age: 6,
+              max_age: 12,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso de objetos pontiagudos por adultos apenas',
+                'Certifique-se de que os palitos não têm pontas afiadas',
+                'Use uma superfície lisa e livre de obstáculos para as corridas',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na construção',
+                'Verifique se o balão está bem vedado para evitar vazamentos'
+              ],
+              variations: [
+                'Versão competição: organize corridas entre vários carrinhos',
+                'Versão cronômetro: veja qual carrinho vai mais longe',
+                'Versão cooperativa: trabalhem juntos para construir o melhor carrinho',
+                'Versão com diferentes tamanhos: use garrafas maiores ou menores',
+                'Versão com decoração: personalize o carrinho com adesivos e cores',
+                'Versão com obstáculos: crie uma pista com obstáculos para contornar'
+              ],
+              image_url: '/Brincadeiras/10..png',
+              video_url: '/Brincadeiras/10.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 45,
+              title: 'Alinhamento Colorido',
+              description: 'Brincadeira de sequenciamento onde as crianças devem organizar tampinhas coloridas seguindo um padrão de referência. Desenvolve reconhecimento de cores, raciocínio lógico, sequenciamento, percepção espacial e organização.',
+              instructions: [
+                'Prepare o gabarito: levante os palitos e coloque as tampinhas nas canaletas separadas por cor',
+                'Feche o portão: abaixe os palitos para manter as tampinhas presas como guia de cores',
+                'Crie o desafio: pegue uma tampinha de cada cor e coloque-as desordenadas na parte de baixo',
+                'Observe a sequência de cores das canaletas na parte de cima (o gabarito)',
+                'Arraste as tampinhas soltas na parte de baixo para ficarem na mesma ordem',
+                'Continue organizando até a sequência de baixo ficar idêntica à de cima',
+                'Quando estiver correto, o desafio está concluído!',
+                'Bagunçar as tampinhas de baixo e começar um novo desafio'
+              ],
+              materials: [
+                '1 base de papelão retangular',
+                'Tiras de papelão ondulado (para fazer as divisórias)',
+                'Tampinhas de garrafa PET de cores variadas (várias unidades de cada cor)',
+                '2 palitos de churrasco',
+                'Cola quente ou cola forte (para ser usada por um adulto)',
+                'Estilete ou objeto pontiagudo para furar (para ser usado por um adulto)',
+                'Tesoura para cortar as tiras',
+                'Mesa ou superfície plana para apoiar'
+              ],
+              categories: ['cores', 'sequenciamento', 'lógica', 'espacial', 'organização', 'cognitivo'],
+              duration: 5,
+              participants: '1',
+              difficulty: 'medium',
+              min_age: 3,
+              max_age: 8,
+              rating: 4.8,
+              safety_tips: [
+                'Supervisione o uso de ferramentas pontiagudas por adultos apenas',
+                'Certifique-se de que as tampinhas são grandes o suficiente para não serem engolidas',
+                'Use materiais atóxicos e seguros',
+                'Verifique se os palitos estão bem fixados para evitar acidentes',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na organização'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue organizar mais rápido',
+                'Versão com mais cores: aumente a dificuldade usando mais cores diferentes',
+                'Versão com sequências mais longas: use mais tampinhas de cada cor',
+                'Versão cooperativa: trabalhem juntos para organizar as tampinhas',
+                'Versão com padrões diferentes: crie sequências alternadas ou repetitivas',
+                'Versão com números: substitua cores por números para ensinar sequências numéricas'
+              ],
+              image_url: '/Brincadeiras/11..png',
+              video_url: '/Brincadeiras/11.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 46,
+              title: 'Guerra de Discos',
+              description: 'Brincadeira de ação rápida onde dois jogadores competem para esvaziar seu campo atirando discos através de um gol central usando elásticos. Desenvolve agilidade, reflexos, coordenação olho-mão, precisão e concentração sob pressão.',
+              instructions: [
+                'Cada jogador fica de um lado do tabuleiro com seus 5 discos coloridos',
+                'Ao sinal de "JÁ!", ambos começam a atirar simultaneamente',
+                'Para atirar: puxe um disco para trás esticando o elástico e solte',
+                'Objetivo: fazer o disco passar pelo "gol" no meio da divisória',
+                'Qualquer disco que vier do campo adversário se torna seu para atirar',
+                'Continue atirando sem parar até esvaziar seu campo',
+                'O GRANDE OBJETIVO: ser o primeiro a limpar completamente seu lado',
+                'Quem conseguir esvaziar seu campo primeiro vence a partida!'
+              ],
+              materials: [
+                '1 tampa de caixa de sapatos (ou caixa de papelão baixa e retangular)',
+                '1 tira de papelão (para a divisória do meio)',
+                '10 círculos (discos) de papelão recortados de outra caixa',
+                'Tinta ou canetinhas de 2 cores diferentes',
+                'Fio de elástico (lastex) ou elástico fino e comprido',
+                'Cola quente ou cola forte (para ser usada por um adulto)',
+                'Estilete (para ser usado por um adulto)',
+                'Cronômetro (opcional, para cronometrar as partidas)'
+              ],
+              categories: ['agilidade', 'reflexos', 'coordenação', 'precisão', 'concentração', 'competição'],
+              duration: 5,
+              participants: '2',
+              difficulty: 'hard',
+              min_age: 6,
+              max_age: 12,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso do estilete por adultos apenas',
+                'Certifique-se de que os discos são grandes o suficiente para não serem engolidos',
+                'Use elásticos de boa qualidade para evitar quebras durante o jogo',
+                'Mantenha o espaço de jogo livre de obstáculos',
+                'Ensine sobre fair play e respeito entre os jogadores',
+                'Verifique se a divisória está bem fixada para evitar acidentes'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue mais gols em tempo determinado',
+                'Versão com mais discos: aumente a dificuldade usando mais discos',
+                'Versão com gols menores: diminua o tamanho do gol para maior desafio',
+                'Versão com diferentes tamanhos de discos: varie o desafio',
+                'Versão torneio: organize um campeonato entre várias duplas',
+                'Versão com obstáculos: adicione pequenos obstáculos no campo'
+              ],
+              image_url: '/Brincadeiras/12..png',
+              video_url: '/Brincadeiras/12.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 47,
+              title: 'Conexão das Formas',
+              description: 'Brincadeira de pareamento onde as crianças conectam formas coloridas usando barbantes, criando um emaranhado de fios que cruzam o tabuleiro. Desenvolve reconhecimento de formas e cores, pareamento, coordenação motora fina e percepção espacial (cruzamento da linha média do corpo).',
+              instructions: [
+                'Deixe o tabuleiro na frente da criança com todas as peças móveis soltas no meio',
+                'Pegue uma das peças móveis (ex: estrela amarela)',
+                'Olhe a coluna da direita e encontre a forma fixa correspondente',
+                'Quando encontrar o par, estique o fio e coloque a peça móvel em cima da sua gêmea',
+                'Repita o processo com todas as outras formas, uma por uma',
+                'Continue conectando cada forma ao seu par correspondente',
+                'Estique os fios para criar conexões visuais entre as formas',
+                'Termine quando todas as formas estiverem conectadas, criando um lindo emaranhado!'
+              ],
+              materials: [
+                '1 base de papelão grande',
+                'Folhas de EVA ou cartolina de cores variadas',
+                'Barbante ou lã (várias cores)',
+                'Cola forte ou pistola de cola quente (para ser usada por um adulto)',
+                'Tesoura',
+                'Velcro adesivo (opcional, para uma variação do jogo)',
+                'Marcadores ou canetinhas (para desenhar as formas)',
+                'Régua (para desenhar formas simétricas)'
+              ],
+              categories: ['formas', 'cores', 'pareamento', 'coordenação', 'espacial', 'cognitivo'],
+              duration: 5,
+              participants: '1',
+              difficulty: 'medium',
+              min_age: 3,
+              max_age: 8,
+              rating: 4.7,
+              safety_tips: [
+                'Supervisione o uso da tesoura e cola quente por adultos apenas',
+                'Certifique-se de que as formas são grandes o suficiente para não serem engolidas',
+                'Use materiais atóxicos e seguros',
+                'Verifique se os barbantes estão bem fixados para evitar acidentes',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na conexão das formas'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue conectar todas as formas mais rápido',
+                'Versão com mais formas: aumente a dificuldade usando mais tipos de formas',
+                'Versão cooperativa: trabalhem juntos para conectar todas as formas',
+                'Versão com cores diferentes: use formas da mesma cor mas de tipos diferentes',
+                'Versão com sequência: conecte as formas em uma ordem específica',
+                'Versão com velcro: use velcro para fixar as formas temporariamente'
+              ],
+              image_url: '/Brincadeiras/13..png',
+              video_url: '/Brincadeiras/13.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 48,
+              title: 'Estação das Formas',
+              description: 'Brincadeira de classificação onde as crianças organizam palitos com formas coloridas em potes correspondentes. Desenvolve classificação por forma e cor, reconhecimento de padrões, associação, concentração e coordenação motora fina.',
+              instructions: [
+                'Coloque a "Estação das Formas" na frente da criança',
+                'Espalhe ou empilhe todos os palitos ao lado da estação',
+                'Pegue um palito de cada vez e observe a forma e cor em sua ponta',
+                'Procure qual dos potes tem a forma correspondente desenhada',
+                'Ao encontrar o pote correto, coloque o palito dentro dele',
+                'Continue pegando os próximos palitos e classificando',
+                'Repita o processo até todos os palitos estarem organizados',
+                'Ao final, todos os triângulos estarão no pote de triângulos, corações no pote de corações, etc!'
+              ],
+              materials: [
+                '1 base de papelão retangular',
+                '4 rolos de papel higiênico',
+                'Vários palitos de picolé',
+                'Folhas de EVA ou cartolina de cores variadas (vermelho, verde, amarelo, azul)',
+                'Cola forte ou pistola de cola quente (para ser usada por um adulto)',
+                'Tesoura',
+                'Marcadores ou canetinhas (para desenhar as formas)',
+                'Mesa ou superfície plana para apoiar'
+              ],
+              categories: ['formas', 'cores', 'classificação', 'padrões', 'associação', 'cognitivo'],
+              duration: 10,
+              participants: '1',
+              difficulty: 'easy',
+              min_age: 3,
+              max_age: 8,
+              rating: 4.8,
+              safety_tips: [
+                'Supervisione o uso da tesoura e cola quente por adultos apenas',
+                'Certifique-se de que as formas são grandes o suficiente para não serem engolidas',
+                'Use materiais atóxicos e seguros',
+                'Verifique se os rolos estão bem fixados na base',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na classificação'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue classificar mais rápido',
+                'Versão com mais formas: aumente a dificuldade usando mais tipos de formas',
+                'Versão cooperativa: trabalhem juntos para classificar todas as formas',
+                'Versão com cores diferentes: use formas da mesma cor mas de tipos diferentes',
+                'Versão com sequência: classifique as formas em uma ordem específica',
+                'Versão com números: substitua formas por números para ensinar classificação numérica'
+              ],
+              image_url: '/Brincadeiras/14..png',
+              video_url: '/Brincadeiras/14.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 49,
+              title: 'Pinball de Caixa',
+              description: 'Brincadeira de fliperama caseiro onde as crianças constroem um pinball usando caixa de papelão e materiais criativos. Desenvolve coordenação motora fina, noção de causa e efeito, contagem e soma de pontos.',
+              instructions: [
+                'Posicione a bolinha sobre o palito do lançador',
+                'Use um dedo para puxar para trás a ponta livre do pregador',
+                'Solte o pregador de uma vez para dar impulso na bolinha',
+                'A bolinha será atirada com velocidade pela rampa',
+                'Observe a bolinha percorrer o caminho e descer pelo campo',
+                'A bolinha vai quicar nas paredes até cair em uma das cestas',
+                'Anote os pontos que marcou!',
+                'Para competir: cada jogador tem direito a 5 lançamentos'
+              ],
+              materials: [
+                '1 tampa de caixa de sapatos ou caixa de papelão rasa',
+                'Cartolina branca ou de outras cores',
+                '1 pregador de roupa de madeira ou plástico',
+                '1 palito de picolé',
+                '1 bolinha pequena (de borracha, gude ou miçanga grande)',
+                'Canetinhas coloridas',
+                'Cola quente (para ser usada por um adulto)',
+                'Tesoura',
+                'Papel colorido para os marcadores de pontos',
+                'Mesa ou superfície plana para apoiar'
+              ],
+              categories: ['coordenação', 'causa-efeito', 'contagem', 'competição', 'criatividade', 'físico'],
+              duration: 10,
+              participants: '1+',
+              difficulty: 'medium',
+              min_age: 5,
+              max_age: 12,
+              rating: 4.9,
+              safety_tips: [
+                'Supervisione o uso da cola quente por adultos apenas',
+                'Certifique-se de que a bolinha é grande o suficiente para não ser engolida',
+                'Use uma superfície estável para apoiar a caixa',
+                'Mantenha o espaço livre de obstáculos',
+                'Ensine sobre paciência e persistência',
+                'Verifique se o pregador está bem fixado para evitar acidentes'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue mais pontos em tempo determinado',
+                'Versão com diferentes tamanhos de bolinha: varie o desafio',
+                'Versão cooperativa: trabalhem juntos para conseguir a maior pontuação',
+                'Versão com obstáculos: adicione pequenos obstáculos no campo',
+                'Versão torneio: organize um campeonato entre vários jogadores',
+                'Versão com pontuação diferente: cada cesta vale pontos diferentes'
+              ],
+              image_url: '/Brincadeiras/15..png',
+              video_url: '/Brincadeiras/15.mp4',
+              active: true,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: 50,
+              title: 'Alinha Cor',
+              description: 'Brincadeira de precisão onde as crianças encaixam pinos coloridos em furos seguindo padrões desenhados. Desenvolve coordenação motora fina (movimento de pinça), precisão, concentração, reconhecimento de cores e associação de padrões.',
+              instructions: [
+                'Coloque o tabuleiro na frente da criança',
+                'Entregue um potinho com todos os pinos coloridos misturados',
+                'Observe o padrão ou as cores desenhadas no tabuleiro',
+                'Pegue um pino da cor correspondente a um dos desenhos',
+                'Use o movimento de pinça (polegar e indicador) para segurar o pino',
+                'Encaixe o pino no furo correto',
+                'Continue até que todos os furos do padrão estejam preenchidos',
+                'Para recomeçar, retire todos os pinos e embaralhe novamente!'
+              ],
+              materials: [
+                '1 tampa de caixa de sapatos',
+                'Pinos coloridos (cotonetes com algodão cortado, pedaços de canudo, refis de caneta vazios ou palitos pintados)',
+                'Canetinhas coloridas',
+                '1 objeto pontiagudo para fazer os furos (prego pequeno ou furador)',
+                'Pote pequeno para guardar os pinos',
+                'Mesa ou superfície plana para apoiar'
+              ],
+              categories: ['cores', 'coordenação', 'precisão', 'concentração', 'padrões', 'pinça'],
+              duration: 10,
+              participants: '1',
+              difficulty: 'medium',
+              min_age: 3,
+              max_age: 8,
+              rating: 4.8,
+              safety_tips: [
+                'Supervisione o uso do objeto pontiagudo por adultos apenas',
+                'Certifique-se de que os pinos são grandes o suficiente para não serem engolidos',
+                'Use materiais atóxicos e seguros',
+                'Verifique se os furos não têm bordas afiadas',
+                'Mantenha o espaço organizado para evitar tropeços',
+                'Ensine sobre paciência e persistência na precisão'
+              ],
+              variations: [
+                'Versão cronômetro: veja quem consegue completar o padrão mais rápido',
+                'Versão com padrões mais complexos: aumente a dificuldade usando mais cores',
+                'Versão cooperativa: trabalhem juntos para completar o padrão',
+                'Versão com formas geométricas: crie padrões de triângulos, quadrados, etc.',
+                'Versão com letras: use os furos para formar letras do alfabeto',
+                'Versão com números: crie padrões numéricos usando os pinos'
+              ],
+              image_url: '/Brincadeiras/16..png',
+              video_url: '/Brincadeiras/16.mp4',
+              active: true,
+              created_at: new Date().toISOString()
             }
           ]
           
@@ -2046,6 +2834,350 @@ const useAppStore = create(
                   description: 'Conteúdo infantil'
                 }
               ]
+            },
+            {
+              id: 7,
+              title: 'Urso',
+              description: 'Aventuras do Urso e seus amigos que ensinam sobre amizade, resolução de problemas, criatividade e valores importantes da vida. Cada episódio traz lições valiosas sobre relacionamentos e desenvolvimento emocional através de histórias envolventes.',
+              category: 'educational',
+              min_age: 2,
+              max_age: 8,
+              duration: 25,
+              rating: 4.7,
+              image: '/desenhos/urso.png',
+              thumbnail_url: '/desenhos/urso.png',
+              gallery: [
+                '/desenhos/urso.png'
+              ],
+              video_url: 'https://youtu.be/JGxU4F08fd8?si=ggX2DzQENRYsFDqN',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/JGxU4F08fd8?si=ggX2DzQENRYsFDqN',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - horários variados'
+                },
+                {
+                  name: 'Disney+',
+                  type: 'streaming',
+                  icon: '🏰',
+                  description: 'Todos os episódios disponíveis'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Temporadas completas'
+                }
+              ]
+            },
+            {
+              id: 8,
+              title: 'Zé Coleta',
+              description: 'Aventuras do Zé Coleta que ensinam sobre sustentabilidade, reciclagem, cuidado com o meio ambiente e responsabilidade social. Cada episódio traz lições valiosas sobre preservação ambiental e consciência ecológica de forma divertida e educativa.',
+              category: 'educational',
+              min_age: 3,
+              max_age: 10,
+              duration: 8,
+              rating: 4.6,
+              image: '/desenhos/zé coleta.png',
+              thumbnail_url: '/desenhos/zé coleta.png',
+              gallery: [
+                '/desenhos/zé coleta.png'
+              ],
+              video_url: 'https://youtu.be/DRxLfe1ft9M?si=tguDkLAMqb4wage8',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/DRxLfe1ft9M?si=tguDkLAMqb4wage8',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação educativa'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
+            },
+            {
+              id: 9,
+              title: 'Sara e o Pato',
+              description: 'Aventuras da Sara e seu amigo pato que ensinam sobre amizade, imaginação, criatividade e descobertas do mundo ao redor. Cada episódio traz lições valiosas sobre relacionamentos, curiosidade e desenvolvimento social de forma lúdica e envolvente.',
+              category: 'educational',
+              min_age: 2,
+              max_age: 6,
+              duration: 2,
+              rating: 4.5,
+              image: '/desenhos/sara e o pato.png',
+              thumbnail_url: '/desenhos/sara e o pato.png',
+              gallery: [
+                '/desenhos/sara e o pato.png'
+              ],
+              video_url: 'https://youtu.be/ZMhp9uJ5VuE?si=qoE4Y6HCa-ubFDcX',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/ZMhp9uJ5VuE?si=qoE4Y6HCa-ubFDcX',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação infantil'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
+            },
+            {
+              id: 10,
+              title: 'Pooh',
+              description: 'As clássicas aventuras do Ursinho Pooh e seus amigos na Floresta dos Cem Acres que ensinam sobre amizade, bondade, imaginação e valores importantes da vida. Cada episódio traz lições valiosas sobre relacionamentos, resolução de problemas e desenvolvimento emocional através de histórias atemporais e encantadoras.',
+              category: 'educational',
+              min_age: 2,
+              max_age: 10,
+              duration: 60,
+              rating: 4.8,
+              image: '/desenhos/pooh.png',
+              thumbnail_url: '/desenhos/pooh.png',
+              gallery: [
+                '/desenhos/pooh.png'
+              ],
+              video_url: 'https://www.youtube.com/watch?v=p6cS3B3upZc',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://www.youtube.com/watch?v=p6cS3B3upZc',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'Disney+',
+                  type: 'streaming',
+                  icon: '🏰',
+                  description: 'Todos os episódios disponíveis'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação infantil'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Temporadas completas'
+                }
+              ]
+            },
+            {
+              id: 11,
+              title: 'Milly e Molly',
+              description: 'Aventuras das irmãs Milly e Molly que ensinam sobre amizade, cooperação, resolução de problemas e valores familiares. Cada episódio traz lições valiosas sobre relacionamentos fraternais, trabalho em equipe e desenvolvimento social através de histórias envolventes e educativas.',
+              category: 'educational',
+              min_age: 3,
+              max_age: 8,
+              duration: 15,
+              rating: 4.4,
+              image: '/desenhos/milly-e-molly.png',
+              thumbnail_url: '/desenhos/milly-e-molly.png',
+              gallery: [
+                '/desenhos/milly-e-molly.png'
+              ],
+              video_url: 'https://www.youtube.com/watch?v=KIWJ0gSUC4o&t=4s',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://www.youtube.com/watch?v=KIWJ0gSUC4o&t=4s',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação infantil'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
+            },
+            {
+              id: 12,
+              title: 'Cocorico',
+              description: 'Aventuras do galo Cocorico que ensinam sobre responsabilidade, pontualidade, rotina e valores importantes do dia a dia. Cada episódio traz lições valiosas sobre organização, disciplina e desenvolvimento de hábitos saudáveis de forma divertida e educativa.',
+              category: 'educational',
+              min_age: 2,
+              max_age: 6,
+              duration: 2,
+              rating: 4.3,
+              image: '/desenhos/cocorico.png',
+              thumbnail_url: '/desenhos/cocorico.png',
+              gallery: [
+                '/desenhos/cocorico.png'
+              ],
+              video_url: 'https://youtu.be/gA9fVuPFmOE?si=QCuwLEVipeIKg06g',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/gA9fVuPFmOE?si=QCuwLEVipeIKg06g',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação infantil'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
+            },
+            {
+              id: 13,
+              title: 'Pocoyo',
+              description: 'As aventuras do Pocoyo e seus amigos que ensinam sobre descobertas, amizade, criatividade e resolução de problemas através de histórias interativas e educativas. Cada episódio traz lições valiosas sobre desenvolvimento social, curiosidade e aprendizado de forma lúdica e envolvente.',
+              category: 'educational',
+              min_age: 1,
+              max_age: 5,
+              duration: 120,
+              rating: 4.9,
+              image: '/desenhos/banner-pocoyo-1.png',
+              thumbnail_url: '/desenhos/banner-pocoyo-1.png',
+              gallery: [
+                '/desenhos/banner-pocoyo-1.png'
+              ],
+              video_url: 'https://youtu.be/o4yHIhafsw0?si=9062DycxPvOl0Laj',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/o4yHIhafsw0?si=9062DycxPvOl0Laj',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'Netflix',
+                  type: 'streaming',
+                  icon: '🎬',
+                  description: 'Temporadas completas disponíveis'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação infantil'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Conteúdo educativo'
+                }
+              ]
+            },
+            {
+              id: 14,
+              title: 'Auts',
+              description: 'Aventuras dos personagens Auts que ensinam sobre inclusão, diversidade, aceitação e desenvolvimento social. Cada episódio traz lições valiosas sobre empatia, respeito às diferenças e construção de uma sociedade mais inclusiva de forma educativa e sensibilizadora.',
+              category: 'educational',
+              min_age: 4,
+              max_age: 12,
+              duration: 3,
+              rating: 4.7,
+              image: '/desenhos/auts.png',
+              thumbnail_url: '/desenhos/auts.png',
+              gallery: [
+                '/desenhos/auts.png'
+              ],
+              video_url: 'https://youtu.be/SJfVGbfBu9g?si=E5EEfmCPoibEoB4S',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://youtu.be/SJfVGbfBu9g?si=E5EEfmCPoibEoB4S',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação educativa'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
             }
           ]
           
@@ -2261,6 +3393,7 @@ const useAppStore = create(
       partialize: (state) => ({
         cachedData: state.cachedData,
         child: state.child
+        // Não persistir user, isAuthenticated, isLoading - sempre iniciar deslogado
       })
     }
   )

@@ -22,7 +22,6 @@ import {
 import useAppStore from '../../store/useAppStore'
 import { useChildDevelopment } from '../../hooks/useChildDevelopment'
 import { ActivityHistory } from '../../components/ActivityHistory/ActivityHistory'
-import PurchaseStatus from '../../components/PurchaseStatus'
 import toast from 'react-hot-toast'
 
 const ProfilePage = () => {
@@ -224,8 +223,6 @@ const ProfilePage = () => {
         </Link>
       </div>
 
-      {/* Status da Compra - abaixo da seção de navegação */}
-      <PurchaseStatus userEmail={useAppStore.getState().user?.email} />
 
       {/* Modal de Edição Personalizado */}
       {showEditModal && (

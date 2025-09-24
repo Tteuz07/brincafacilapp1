@@ -97,7 +97,6 @@ const ActivitiesPage = () => {
 
   const typeOptions = [
     { id: 'all', label: 'Todas' },
-    { id: 'premium', label: 'Premium (com vídeo)', emoji: '🎬' },
     { id: 'normal', label: 'Normal (com foto)', emoji: '📸' }
   ]
 
@@ -108,13 +107,6 @@ const ActivitiesPage = () => {
       emoji: '🎯', 
       description: 'Todas as brincadeiras',
       color: 'from-gray-500 to-gray-600'
-    },
-    { 
-      id: 'premium', 
-      label: 'Premium', 
-      emoji: '🎬', 
-      description: 'Com vídeos demonstrativos',
-      color: 'from-purple-500 to-pink-600'
     },
     { 
       id: 'normal', 
@@ -253,21 +245,74 @@ const ActivitiesPage = () => {
           // Mapeamento dos novos filtros para as categorias existentes
           const filterMapping = {
             // Desenvolver Habilidades
-            'coordenação': ['coordenação', 'motor', 'physical', 'coordination', 'fine-motor'],
-            'memória': ['memória', 'memory', 'cognitive', 'cognitivo', 'focus', 'concentration'],
-            'criatividade': ['creative', 'criatividade', 'art', 'creative'],
-            'socialização': ['social', 'socialização', 'interaction', 'social'],
+            'coordenação': [
+              'coordenação', 'motor', 'physical', 'coordination', 'fine-motor', 
+              'physical', 'coordination', 'fine-motor', 'pinça', 'equilíbrio',
+              'coordenação-motora', 'coordenação-motora-fina', 'movimento-pinça',
+              'coordenação-motora-ampla', 'agilidade', 'precisão', 'destreza-manual'
+            ],
+            'memória': [
+              'memória', 'memory', 'cognitive', 'cognitivo', 'focus', 'concentration',
+              'sequential', 'visual', 'detail-oriented', 'persistence', 'concentração',
+              'memória-visual', 'sequência', 'padrões', 'reconhecimento'
+            ],
+            'criatividade': [
+              'creative', 'criatividade', 'art', 'creative', 'colors', 'imagination',
+              'criatividade', 'arte', 'cores', 'imaginação', 'expressão-criativa',
+              'desenho', 'pintura', 'construção', 'invenção'
+            ],
+            'socialização': [
+              'social', 'socialização', 'interaction', 'social', 'competição', 'competition',
+              'social', 'interação', 'trabalho-em-equipe', 'cooperação', 'comunicação',
+              'relacionamentos', 'amizade', 'colaboração'
+            ],
             
             // Perfil da Criança
-            'agitado': ['energy', 'physical', 'motor', 'competição', 'competition', 'quick-thinking'],
-            'calmo': ['quiet', 'calm', 'relaxing', 'meditation', 'indoor', 'concentration'],
-            'timido': ['confidence', 'social', 'self-esteem', 'social'],
-            'curioso': ['learning', 'educational', 'discovery', 'observação', 'observation', 'problem-solving'],
+            'agitado': [
+              'energy', 'physical', 'motor', 'competição', 'competition', 'quick-thinking',
+              'physical', 'coordination', 'competition', 'quick-thinking', 'agilidade',
+              'energia', 'movimento', 'atividade-física', 'competitivo', 'rápido'
+            ],
+            'calmo': [
+              'quiet', 'calm', 'relaxing', 'meditation', 'indoor', 'concentration',
+              'indoor', 'quiet', 'concentration', 'focus', 'calm', 'tranquilo',
+              'concentração', 'paciência', 'relaxante', 'silencioso'
+            ],
+            'timido': [
+              'confidence', 'social', 'self-esteem', 'social', 'socialização',
+              'interaction', 'relacionamentos', 'amizade', 'confiança', 'autoestima',
+              'comunicação', 'expressão', 'desenvolvimento-social'
+            ],
+            'curioso': [
+              'learning', 'educational', 'discovery', 'observação', 'observation', 'problem-solving',
+              'educational', 'learning', 'discovery', 'problem-solving', 'observação',
+              'curiosidade', 'exploração', 'descoberta', 'investigação', 'aprendizado'
+            ],
             
             // Situação
-            'casa': ['indoor', 'casa'],
-            'indoor': ['indoor', 'casa'],
-            'quintal': ['outdoor', 'quintal'],
+            'casa': [
+              'indoor', 'casa', 'educational', 'fine-motor', 'indoor', 'quiet',
+              'logic', 'indoor', 'concentration', 'memory', 'traditional', 'coordination',
+              'visual', 'spatial', 'problem-solving', 'traditional', 'physical',
+              'strategic', 'traditional', 'social', 'fine-motor', 'sequential',
+              'traditional', 'coordination', 'engineering', 'traditional', 'fine-motor',
+              'spatial', 'observation', 'memory', 'traditional', 'detail-oriented',
+              'logic', 'traditional', 'spatial', 'persistence', 'casa', 'interior'
+            ],
+            'indoor': [
+              'indoor', 'casa', 'educational', 'fine-motor', 'indoor', 'quiet',
+              'logic', 'indoor', 'concentration', 'memory', 'traditional', 'coordination',
+              'visual', 'spatial', 'problem-solving', 'traditional', 'physical',
+              'strategic', 'traditional', 'social', 'fine-motor', 'sequential',
+              'traditional', 'coordination', 'engineering', 'traditional', 'fine-motor',
+              'spatial', 'observation', 'memory', 'traditional', 'detail-oriented',
+              'logic', 'traditional', 'spatial', 'persistence', 'casa', 'interior'
+            ],
+            'quintal': [
+              'outdoor', 'quintal', 'physical', 'coordination', 'traditional',
+              'physical', 'educational', 'coordination', 'outdoor', 'exterior',
+              'ar-livre', 'natureza', 'espaço-amplo', 'atividades-externas'
+            ],
             'rapido': activity.duration <= 15,
             'longo': activity.duration >= 30
           }
@@ -287,12 +332,86 @@ const ActivitiesPage = () => {
               mappedCategories.includes(String(cat).toLowerCase())
             ) || mappedCategories.some(m => tags.includes(String(m).toLowerCase()))
             if (!hasMatch && filter === 'quintal') {
-              const yardTitles = ['amarelinha', 'caça ao tesouro', 'caca ao tesouro', 'construção de torre', 'construcao de torre', 'construção de torres']
+              const yardTitles = [
+                'amarelinha', 'caça ao tesouro', 'caca ao tesouro', 'construção de torre', 
+                'construcao de torre', 'construção de torres', 'circuito', 'corrida', 
+                'estrada', 'carrinho', 'foguete', 'guerra', 'discos'
+              ]
               if (yardTitles.some(y => title.includes(y))) return true
             }
             if (!hasMatch && filter === 'indoor') {
-              const indoorTitles = ['memória', 'puzzle', 'quebra-cabeça', 'desenho', 'pintura', 'lego', 'bloco', 'construção', 'jogo de tabuleiro', 'dominó', 'cartas']
+              const indoorTitles = [
+                'memória', 'puzzle', 'quebra-cabeça', 'desenho', 'pintura', 'lego', 
+                'bloco', 'construção', 'jogo de tabuleiro', 'dominó', 'cartas',
+                'pinça', 'pinball', 'labirinto', 'cascata', 'soma', 'alinhamento',
+                'conexão', 'estação', 'código', 'encaixe', 'pescador', 'argolas'
+              ]
               if (indoorTitles.some(i => title.includes(i))) return true
+            }
+            if (!hasMatch && filter === 'coordenação') {
+              const coordinationTitles = [
+                'pinça', 'equilíbrio', 'coordenação', 'motor', 'fina', 'ampla',
+                'agilidade', 'precisão', 'destreza', 'movimento', 'pinball',
+                'labirinto', 'cascata', 'alinhamento', 'conexão', 'encaixe',
+                'pescador', 'argolas', 'circuito', 'carrinho', 'foguete'
+              ]
+              if (coordinationTitles.some(c => title.includes(c))) return true
+            }
+            if (!hasMatch && filter === 'memória') {
+              const memoryTitles = [
+                'memória', 'sequência', 'padrões', 'reconhecimento', 'visual',
+                'concentração', 'foco', 'persistência', 'código', 'cores',
+                'alinhamento', 'conexão', 'formas'
+              ]
+              if (memoryTitles.some(m => title.includes(m))) return true
+            }
+            if (!hasMatch && filter === 'criatividade') {
+              const creativityTitles = [
+                'criatividade', 'arte', 'cores', 'imaginação', 'expressão',
+                'desenho', 'pintura', 'construção', 'invenção', 'código',
+                'conexão', 'formas', 'alinhamento', 'carrinho', 'foguete'
+              ]
+              if (creativityTitles.some(c => title.includes(c))) return true
+            }
+            if (!hasMatch && filter === 'socialização') {
+              const socialTitles = [
+                'social', 'interação', 'trabalho-em-equipe', 'cooperação',
+                'comunicação', 'relacionamentos', 'amizade', 'colaboração',
+                'competição', 'pebolim', 'guerra', 'discos', 'circuito'
+              ]
+              if (socialTitles.some(s => title.includes(s))) return true
+            }
+            if (!hasMatch && filter === 'agitado') {
+              const activeTitles = [
+                'energia', 'movimento', 'atividade-física', 'competitivo',
+                'rápido', 'agilidade', 'circuito', 'corrida', 'carrinho',
+                'foguete', 'guerra', 'discos', 'pebolim', 'cascata'
+              ]
+              if (activeTitles.some(a => title.includes(a))) return true
+            }
+            if (!hasMatch && filter === 'calmo') {
+              const calmTitles = [
+                'concentração', 'paciência', 'relaxante', 'silencioso',
+                'tranquilo', 'código', 'cores', 'alinhamento', 'conexão',
+                'formas', 'pinça', 'memória', 'puzzle', 'quebra-cabeça'
+              ]
+              if (calmTitles.some(c => title.includes(c))) return true
+            }
+            if (!hasMatch && filter === 'timido') {
+              const confidenceTitles = [
+                'confiança', 'autoestima', 'comunicação', 'expressão',
+                'desenvolvimento-social', 'social', 'interação', 'amizade',
+                'relacionamentos', 'colaboração', 'trabalho-em-equipe'
+              ]
+              if (confidenceTitles.some(c => title.includes(c))) return true
+            }
+            if (!hasMatch && filter === 'curioso') {
+              const curiousTitles = [
+                'curiosidade', 'exploração', 'descoberta', 'investigação',
+                'aprendizado', 'código', 'cores', 'conexão', 'formas',
+                'circuito', 'carrinho', 'foguete', 'labirinto', 'cascata'
+              ]
+              if (curiousTitles.some(c => title.includes(c))) return true
             }
             if (hasMatch) {
               console.log(`✅ ${activity.title} - Filtro "${filter}" - Categorias:`, activity.categories)
@@ -313,12 +432,10 @@ const ActivitiesPage = () => {
       console.log('🎯 Após filtros objetivos:', filtered.length, 'atividades')
     }
     
-    // Filtro por categoria especial (premium/normal)
+    // Filtro por categoria especial (normal)
     if (activeCategory !== 'all') {
       filtered = filtered.filter(activity => {
-        if (activeCategory === 'premium') {
-          return !!activity.video_url
-        } else if (activeCategory === 'normal') {
+        if (activeCategory === 'normal') {
           return !activity.video_url
         }
         return true
@@ -388,12 +505,10 @@ const ActivitiesPage = () => {
       console.log('🏠 Após filtro de espaço:', filtered.length, 'atividades')
     }
 
-    // Filtro por tipo (Premium vs Normal)
+    // Filtro por tipo (Normal)
     if (selectedType !== 'all') {
       filtered = filtered.filter(activity => {
-        if (selectedType === 'premium') {
-          return activity.video_url // Tem vídeo = Premium
-        } else if (selectedType === 'normal') {
+        if (selectedType === 'normal') {
           return !activity.video_url // Não tem vídeo = Normal
         }
         return true
@@ -406,9 +521,6 @@ const ActivitiesPage = () => {
       filtered = filtered.filter(activity => {
         let shouldInclude = false
         switch (activeCategory) {
-          case 'premium':
-            shouldInclude = !!activity.video_url
-            break
           case 'normal':
             shouldInclude = !activity.video_url
             break

@@ -11,6 +11,11 @@ export default defineConfig({
     // VitePWA temporariamente desabilitado para deploy
   ],
   build: {
-    target: 'esnext'
-  }
+    target: 'esnext',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser'
+  },
+  base: './'
 })

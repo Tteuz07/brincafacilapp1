@@ -18,25 +18,40 @@ export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabase
 export const checkUserAccess = async (email) => {
   try {
     if (supabase) {
-      const { data, error } = await supabase
+      // Primeiro tenta verificar na tabela authorized_emails
+      const { data: authorizedEmail, error: authError } = await supabase
+        .from('authorized_emails')
+        .select('email, active')
+        .eq('email', email)
+        .eq('active', true)
+        .single()
+      
+      if (authorizedEmail) {
+        return true
+      }
+      
+      // Se não encontrou na tabela authorized_emails, tenta na tabela users
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('status')
         .eq('email', email)
         .single()
       
-      if (error && error.code !== 'PGRST116') {
-        throw error
+      if (userError && userError.code !== 'PGRST116') {
+        console.warn('Erro ao verificar usuário:', userError)
       }
       
-      return data?.status === 'approved'
+      return userData?.status === 'approved'
     }
     
     // Se não tiver Supabase, aceita alguns emails de teste
-    const testEmails = ['demo@brincafacil.com', 'teste@exemplo.com', 'admin@brincafacil.com']
+    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
     return testEmails.includes(email.toLowerCase())
   } catch (error) {
     console.error('Erro ao verificar acesso do usuário:', error)
-    return false
+    // Em caso de erro, aceita emails de teste como fallback
+    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
+    return testEmails.includes(email.toLowerCase())
   }
 }
 
@@ -44,36 +59,57 @@ export const checkUserAccess = async (email) => {
 export const getUserStatus = async (email) => {
   try {
     if (supabase) {
-      const { data, error } = await supabase
+      // Primeiro tenta verificar na tabela authorized_emails
+      const { data: authorizedEmail, error: authError } = await supabase
+        .from('authorized_emails')
+        .select('email, active, created_at')
+        .eq('email', email)
+        .eq('active', true)
+        .single()
+      
+      if (authorizedEmail) {
+        return { 
+          status: 'approved',
+          source: 'authorized_emails',
+          created_at: authorizedEmail.created_at
+        }
+      }
+      
+      // Se não encontrou na tabela authorized_emails, tenta na tabela users
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('status, created_at, updated_at')
         .eq('email', email)
         .single()
       
-      if (error && error.code !== 'PGRST116') {
-        throw error
+      if (userError && userError.code !== 'PGRST116') {
+        console.warn('Erro ao verificar usuário:', userError)
       }
       
-      return data || { status: 'not_found' }
+      return userData || { status: 'not_found' }
     }
     
     // Se não tiver Supabase, simula usuário aprovado
-    const testEmails = ['demo@brincafacil.com', 'teste@exemplo.com', 'admin@brincafacil.com']
+    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
     return testEmails.includes(email.toLowerCase()) 
-      ? { status: 'approved' } 
+      ? { status: 'approved', source: 'test' } 
       : { status: 'not_found' }
   } catch (error) {
     console.error('Erro ao verificar status do usuário:', error)
-    return { status: 'error' }
+    // Em caso de erro, verifica se é email de teste
+    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
+    return testEmails.includes(email.toLowerCase()) 
+      ? { status: 'approved', source: 'test_fallback' } 
+      : { status: 'error' }
   }
 }
 
 // Função simples para login
 export const signInWithEmail = async (email) => {
   if (!supabase) {
-    console.warn('Supabase não configurado - modo demonstração')
+    console.warn('Supabase não configurado - usando dados locais')
     
-    const hasAccess = await checkEmailAccess(email)
+    const hasAccess = await checkUserAccess(email)
     
     if (!hasAccess) {
       throw new Error('Email não autorizado para acesso')
@@ -82,7 +118,7 @@ export const signInWithEmail = async (email) => {
     return { 
       data: { 
         user: { 
-          id: 'demo-user-' + Date.now(), 
+          id: 'user-' + Date.now(), 
           email: email,
           created_at: new Date().toISOString()
         } 
@@ -92,7 +128,7 @@ export const signInWithEmail = async (email) => {
   }
   
   try {
-    const hasAccess = await checkEmailAccess(email)
+    const hasAccess = await checkUserAccess(email)
     
     if (!hasAccess) {
       throw new Error('Email não autorizado para acesso')

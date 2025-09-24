@@ -16,17 +16,19 @@ const LoginPage = () => {
       return
     }
 
+    console.log('🔍 Verificando status do usuário:', emailToCheck)
     setIsCheckingEmail(true)
     try {
       const userStatus = await getUserStatus(emailToCheck)
+      console.log('📊 Status retornado:', userStatus)
       
       setEmailStatus({
         hasAccess: userStatus.status === 'approved',
         status: userStatus.status,
-        source: 'supabase'
+        source: userStatus.source || 'supabase'
       })
     } catch (error) {
-      console.error('Erro ao verificar usuário:', error)
+      console.error('❌ Erro ao verificar usuário:', error)
       setEmailStatus({
         hasAccess: false,
         status: 'error',
@@ -62,6 +64,10 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    console.log('🚀 Tentando fazer login com:', email)
+    console.log('✅ Pode prosseguir:', canProceedWithLogin())
+    console.log('📊 Status do email:', emailStatus)
+    
     if (!email) {
       toast.error('Digite seu email')
       return
@@ -80,31 +86,49 @@ const LoginPage = () => {
     setIsLoading(true)
     
     try {
+      console.log('🔐 Chamando signInWithEmail...')
       const { data, error } = await signInWithEmail(email)
+      console.log('📋 Resposta do login:', { data, error })
       
       if (error) {
+        console.error('❌ Erro no login:', error)
         if (error.message.includes('não autorizado')) {
           toast.error('Este email não tem acesso ao BrincaFácil')
         } else {
           toast.error('Erro ao fazer login. Tente novamente.')
         }
-        console.error('Erro de login:', error)
       } else if (data?.user) {
+        console.log('✅ Login bem-sucedido!')
         toast.success(`Bem-vindo(a)! Redirecionando...`)
         
-        // Simular o processo de autenticação do Supabase
+        // Salvar usuário no localStorage e disparar evento
+        const user = data.user
+        const child = {
+          id: `child-${user.id}`,
+          name: user.user_metadata?.name || 'Criança',
+          age: 5,
+          avatar: '🧒',
+          interests: ['brincadeiras', 'desenhos'],
+          space: 'casa',
+          companionship: 'sozinho'
+        }
+        
+        console.log('💾 Salvando no localStorage...')
+        // Salvar no localStorage
+        localStorage.setItem('brincafacil-user', JSON.stringify(user))
+        localStorage.setItem('brincafacil-child', JSON.stringify(child))
+        
+        // Disparar evento de mudança de autenticação
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('supabase-auth-change', {
-            detail: { 
-              event: 'SIGNED_IN', 
-              session: data.session || { user: data.user }
-            }
+          console.log('📡 Disparando evento de autenticação...')
+          window.dispatchEvent(new CustomEvent('brincafacil-auth-change', {
+            detail: { user, child }
           }))
         }, 1000)
       }
     } catch (error) {
+      console.error('❌ Erro inesperado no login:', error)
       toast.error('Erro inesperado. Tente novamente.')
-      console.error('Erro inesperado:', error)
     } finally {
       setIsLoading(false)
     }
@@ -123,18 +147,6 @@ const LoginPage = () => {
       
       <div className="relative z-10 w-full max-w-lg">
         
-        {/* Banner de Modo Demonstração */}
-        {!supabase && (
-          <div className="mb-8 p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg border-0">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertCircle size={18} />
-              <span className="font-semibold text-sm">Versão Demo</span>
-            </div>
-            <p className="text-blue-100 text-sm leading-relaxed">
-              Teste grátis! Digite qualquer email para explorar o app.
-            </p>
-          </div>
-        )}
 
         {/* Card principal de login */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 border-0">
