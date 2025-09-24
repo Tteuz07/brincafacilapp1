@@ -2,12 +2,9 @@
 
 ## ✅ **Arquivos de Configuração Criados:**
 
-### 1. **vercel.json** - Configuração principal da Vercel
+### 1. **vercel.json** - Configuração mínima da Vercel
 ```json
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
@@ -16,6 +13,10 @@
   ]
 }
 ```
+**Por quê?** A Vercel detecta automaticamente:
+- ✅ Build Command: `npm run build`
+- ✅ Output Directory: `dist`
+- ✅ Framework: `vite`
 
 ### 2. **public/_redirects** - Redirecionamentos para SPA
 ```
