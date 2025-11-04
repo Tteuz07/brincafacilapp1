@@ -422,11 +422,11 @@ const ShopPage = () => {
     return Math.round(((originalPrice - price) / originalPrice) * 100)
   }
 
-  // Formatar números para exibição (ex: 1000 -> 1k)
+  // Formatar números para exibição (ex: 1000 -> 1mil+)
   const formatNumber = (num) => {
     if (num >= 1000) {
       const k = Math.floor(num / 1000)
-      return `${k}k`
+      return `${k}mil+`
     }
     return num.toString()
   }
