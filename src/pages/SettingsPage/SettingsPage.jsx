@@ -1,32 +1,48 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Settings, 
   LogOut, 
-  HelpCircle, 
   Lightbulb,
   User,
   Bell,
   Shield,
-  Info,
   RefreshCw,
-  Moon,
-  Sun,
   Volume2,
   VolumeX
 } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
+import { supabase } from '../../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
 const SettingsPage = () => {
   const { user, logout } = useAppStore()
   const [notifications, setNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
   const [sound, setSound] = useState(true)
+  const [userEmail, setUserEmail] = useState('')
+
+  // Buscar email do Supabase quando o componente carregar
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+          setUserEmail(user.email)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar email do usuário:', error)
+      }
+    }
+    fetchUserEmail()
+  }, [])
 
   const handleLogout = async () => {
     try {
       await logout()
       toast.success('Até logo! 👋')
+      // Aguardar um pouco para o toast aparecer antes de redirecionar
+      setTimeout(() => {
+        window.location.replace('/login')
+      }, 500)
     } catch (error) {
       toast.error('Erro ao sair')
     }
@@ -62,15 +78,6 @@ const SettingsPage = () => {
           value: sound,
           onChange: setSound,
           color: 'text-green-500'
-        },
-        {
-          icon: darkMode ? Moon : Sun,
-          title: 'Modo Escuro',
-          description: 'Alternar entre tema claro e escuro',
-          type: 'toggle',
-          value: darkMode,
-          onChange: setDarkMode,
-          color: 'text-purple-500'
         }
       ]
     },
@@ -95,26 +102,6 @@ const SettingsPage = () => {
         }
       ]
     },
-    {
-      title: 'Suporte',
-      items: [
-        {
-          icon: HelpCircle,
-          title: 'Ajuda & FAQ',
-          description: 'Perguntas frequentes e guias',
-          type: 'link',
-          link: '/help',
-          color: 'text-blue-500'
-        },
-        {
-          icon: Info,
-          title: 'Sobre o App',
-          description: 'Versão e informações técnicas',
-          type: 'info',
-          color: 'text-gray-500'
-        }
-      ]
-    }
   ]
 
   const handleAction = (action) => {
@@ -155,7 +142,7 @@ const SettingsPage = () => {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
             <span className="text-gray-600">Email:</span>
-            <span className="font-medium text-gray-800">{user?.email}</span>
+            <span className="font-medium text-gray-800">{userEmail || user?.email || 'Carregando...'}</span>
           </div>
           <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
             <span className="text-gray-600">Versão do App:</span>

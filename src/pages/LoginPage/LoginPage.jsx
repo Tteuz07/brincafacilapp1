@@ -1,351 +1,276 @@
-import React, { useState } from 'react'
-import { Mail, ArrowRight, Star, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
-import { signInWithEmail, checkUserAccess, getUserStatus, supabase } from '../../lib/supabase'
+import React, { useState, useEffect } from 'react'
+import { ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabaseClient'
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [emailStatus, setEmailStatus] = useState(null)
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [mode, setMode] = useState('signup'); // padrão: Cadastrar
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Verificar status do usuário
-  const checkUserStatus = async (emailToCheck) => {
-    if (!emailToCheck) {
-      setEmailStatus(null)
-      return
+  // Pré-preencher email se vier em ?email=
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailParam = params.get('email');
+    if (emailParam) {
+      setEmail(emailParam.toLowerCase());
     }
 
-    console.log('🔍 Verificando status do usuário:', emailToCheck)
-    setIsCheckingEmail(true)
-    try {
-      const userStatus = await getUserStatus(emailToCheck)
-      console.log('📊 Status retornado:', userStatus)
+    // Se já houver sessão ao abrir /login, redireciona para /gate
+    // Mas só se não veio de um logout explícito
+    const checkExistingSession = async () => {
+      // Verificar se foi um logout explícito (verificando se há um timestamp recente)
+      const lastLogout = sessionStorage.getItem('last_logout')
+      const now = Date.now()
+      // Se foi logout há menos de 3 segundos, não redirecionar
+      if (lastLogout && (now - parseInt(lastLogout)) < 3000) {
+        console.log('🔐 Logout recente detectado, não redirecionando')
+        sessionStorage.removeItem('last_logout')
+        return
+      }
       
-      setEmailStatus({
-        hasAccess: userStatus.status === 'approved',
-        status: userStatus.status,
-        source: userStatus.source || 'supabase'
-      })
-    } catch (error) {
-      console.error('❌ Erro ao verificar usuário:', error)
-      setEmailStatus({
-        hasAccess: false,
-        status: 'error',
-        source: 'error',
-        error: error.message
-      })
-    } finally {
-      setIsCheckingEmail(false)
-    }
-  }
+      // Aguardar um pouco para garantir que o signOut foi processado
+      await new Promise(r => setTimeout(r, 500))
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        console.log('✅ Sessão já existe, redirecionando para /gate');
+        window.location.replace('/gate');
+      } else {
+        console.log('🔐 Nenhuma sessão encontrada após logout')
+      }
+    };
+    checkExistingSession();
+  }, [location.search]);
 
-  // Verificar se o email tem acesso antes de permitir login
-  const canProceedWithLogin = () => {
-    if (!email) return false
-    if (isCheckingEmail) return false
-    if (!emailStatus) return false
-    return emailStatus.hasAccess === true
-  }
-
-  // Verificar usuário quando email mudar
-  React.useEffect(() => {
-    setEmailStatus(null)
+  // Função para traduzir mensagens de erro do Supabase
+  const translateError = (errorMessage) => {
+    if (!errorMessage) return 'Erro ao autenticar';
     
-    if (email) {
-      const timeoutId = setTimeout(() => {
-        checkUserStatus(email)
-      }, 1000) // Aguardar 1 segundo após parar de digitar
-      
-      return () => clearTimeout(timeoutId)
+    const errorLower = errorMessage.toLowerCase();
+    
+    // Traduções comuns do Supabase Auth
+    if (errorLower.includes('invalid login credentials') || errorLower.includes('invalid credentials')) {
+      return 'E-mail ou senha incorretos';
     }
-  }, [email])
+    if (errorLower.includes('email not confirmed') || errorLower.includes('email_not_confirmed')) {
+      return 'Por favor, confirme seu e-mail antes de entrar';
+    }
+    if (errorLower.includes('user already registered') || errorLower.includes('already registered')) {
+      return 'Este e-mail já está cadastrado. Tente entrar em vez de cadastrar';
+    }
+    if (errorLower.includes('password')) {
+      if (errorLower.includes('too short') || errorLower.includes('minimum')) {
+        return 'A senha precisa ter pelo menos 6 caracteres';
+      }
+      if (errorLower.includes('weak')) {
+        return 'A senha é muito fraca. Use uma senha mais forte';
+      }
+    }
+    if (errorLower.includes('email')) {
+      if (errorLower.includes('invalid') || errorLower.includes('malformed')) {
+        return 'E-mail inválido';
+      }
+    }
+    if (errorLower.includes('too many requests') || errorLower.includes('rate limit')) {
+      return 'Muitas tentativas. Tente novamente em alguns minutos';
+    }
+    
+    return errorMessage;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    console.log('🚀 Tentando fazer login com:', email)
-    console.log('✅ Pode prosseguir:', canProceedWithLogin())
-    console.log('📊 Status do email:', emailStatus)
-    
-    if (!email) {
-      toast.error('Digite seu email')
-      return
-    }
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-    // Verificação adicional de segurança
-    if (!canProceedWithLogin()) {
-      if (emailStatus && !emailStatus.hasAccess) {
-        toast.error('Este email não possui acesso ao BrincaFácil.')
-      } else {
-        toast.error('Aguarde a verificação do email ser concluída.')
-      }
-      return
-    }
-
-    setIsLoading(true)
-    
     try {
-      console.log('🔐 Chamando signInWithEmail...')
-      const { data, error } = await signInWithEmail(email)
-      console.log('📋 Resposta do login:', { data, error })
-      
-      if (error) {
-        console.error('❌ Erro no login:', error)
-        if (error.message.includes('não autorizado')) {
-          toast.error('Este email não tem acesso ao BrincaFácil')
-        } else {
-          toast.error('Erro ao fazer login. Tente novamente.')
-        }
-      } else if (data?.user) {
-        console.log('✅ Login bem-sucedido!')
-        toast.success(`Bem-vindo(a)! Redirecionando...`)
-        
-        // Salvar usuário no localStorage e disparar evento
-        const user = data.user
-        const child = {
-          id: `child-${user.id}`,
-          name: user.user_metadata?.name || 'Criança',
-          age: 5,
-          avatar: '🧒',
-          interests: ['brincadeiras', 'desenhos'],
-          space: 'casa',
-          companionship: 'sozinho'
-        }
-        
-        console.log('💾 Salvando no localStorage...')
-        // Salvar no localStorage
-        localStorage.setItem('brincafacil-user', JSON.stringify(user))
-        localStorage.setItem('brincafacil-child', JSON.stringify(child))
-        
-        // Disparar evento de mudança de autenticação
-        setTimeout(() => {
-          console.log('📡 Disparando evento de autenticação...')
-          window.dispatchEvent(new CustomEvent('brincafacil-auth-change', {
-            detail: { user, child }
-          }))
-        }, 1000)
+      // Validação
+      if (!email.includes('@')) {
+        throw new Error('E-mail inválido');
       }
-    } catch (error) {
-      console.error('❌ Erro inesperado no login:', error)
-      toast.error('Erro inesperado. Tente novamente.')
+      if (password.length < 6) {
+        throw new Error('A senha precisa ter pelo menos 6 caracteres');
+      }
+
+      if (mode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({ 
+          email: email.toLowerCase(), 
+          password 
+        });
+        if (error) {
+          const translatedError = translateError(error.message);
+          throw new Error(translatedError);
+        }
+        console.log('✅ Cadastro realizado:', data);
+        toast.success('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        // Pequeno delay para o toast aparecer antes de redirecionar
+        await new Promise(r => setTimeout(r, 500));
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+          email: email.toLowerCase(), 
+          password 
+        });
+        if (error) {
+          const translatedError = translateError(error.message);
+          throw new Error(translatedError);
+        }
+        console.log('✅ Login realizado:', data);
+        toast.success('Login realizado com sucesso!');
+        
+        // Aguardar a sessão ser salva no localStorage
+        let sessionSaved = false;
+        for (let i = 0; i < 10; i++) {
+          await new Promise(r => setTimeout(r, 200));
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('✅ Sessão salva!');
+            sessionSaved = true;
+            break;
+          }
+        }
+        
+        if (!sessionSaved) {
+          console.warn('⚠️ Sessão não foi salva rapidamente, mas continuando...');
+        }
+        
+        // Pequeno delay adicional
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Redireciona para /gate
+      console.log('🔄 Redirecionando para /gate...');
+      window.location.replace('/gate');
+    } catch (err) {
+      const errorMessage = translateError(err?.message) || 'Erro ao autenticar';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      {/* Fundo animado com gradiente laranja */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-100 via-orange-200 to-yellow-100"></div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-orange-300/20 via-transparent to-yellow-300/20 animate-pulse"></div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 flex-col">
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-r from-orange-400/30 to-yellow-400/30 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
         <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-r from-yellow-400/30 to-orange-400/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-gradient-to-r from-orange-300/30 to-yellow-300/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
       </div>
-      
       <div className="relative z-10 w-full max-w-lg">
-        
-
-        {/* Card principal de login */}
         <div className="bg-white rounded-3xl shadow-2xl p-8 border-0">
-          {/* Header com logo */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <img 
-                src="/logo.png" 
-                alt="BrincaFácil" 
-                className="h-12 w-auto"
+              <img src="/logo.png" alt="BrincaFácil" className="h-12 w-auto" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo ao BrincaFácil!</h1>
+            <p className="text-gray-500 text-sm leading-relaxed">Descubra brincadeiras personalizadas para seu pequeno</p>
+          </div>
+
+          {/* Tabs Cadastrar/Entrar */}
+          <div className="flex space-x-1 bg-gray-100 rounded-xl p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setError(null);
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
+                mode === 'signup'
+                  ? 'bg-white text-orange-500 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <span className="text-sm">Cadastrar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signin');
+                setError(null);
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
+                mode === 'signin'
+                  ? 'bg-white text-orange-500 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <span className="text-sm">Entrar</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">E-mail da compra</label>
+              <input
+                type="email"
+                placeholder="E-mail da compra"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                className="w-full px-4 py-4 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all duration-200 text-gray-900 placeholder-gray-400"
+                required
               />
             </div>
-            <p className="text-gray-500 text-sm leading-relaxed">
-              Acesse sua conta para descobrir brincadeiras<br />
-              personalizadas para seu pequeno
-            </p>
-          </div>
-
-          {/* Formulário de login */}
-          <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-1">
-                Faça seu login
-              </h2>
-              <p className="text-gray-500 text-sm mb-6">
-                Digite seu email abaixo para acessar
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {mode === 'signup' ? 'Crie sua senha' : 'Sua senha'}
+              </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <input
-                  type="email"
-                  placeholder="seu.email@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 text-gray-900 placeholder-gray-400"
-                  disabled={isLoading}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={mode === 'signup' ? 'Crie sua senha' : 'Sua senha'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-4 pr-12 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all duration-200 text-gray-900 placeholder-gray-400"
                   required
                 />
-                
-                {/* Indicador de verificação de email */}
-                {email && (
-                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                    {isCheckingEmail ? (
-                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    ) : emailStatus ? (
-                      emailStatus.hasAccess ? (
-                        <CheckCircle className="text-green-500" size={20} />
-                      ) : (
-                        <XCircle className="text-red-500" size={20} />
-                      )
-                    ) : null}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors focus:outline-none"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
+                </button>
               </div>
-
-              {/* Status do usuário */}
-              {emailStatus && (
-                <div className={`p-3 rounded-lg border ${
-                  emailStatus.hasAccess 
-                    ? 'bg-green-50 border-green-200' 
-                    : emailStatus.status === 'pending'
-                    ? 'bg-yellow-50 border-yellow-200'
-                    : 'bg-red-50 border-red-200'
-                }`}>
-                  <div className="flex items-center space-x-2">
-                    {emailStatus.hasAccess ? (
-                      <>
-                        <CheckCircle className="text-green-600" size={18} />
-                        <div className="flex-1">
-                          <p className="text-green-800 text-sm font-medium">
-                            ✅ Pagamento Aprovado
-                          </p>
-                          <p className="text-green-600 text-xs">
-                            Seu pagamento foi confirmado! Acesso liberado.
-                          </p>
-                        </div>
-                      </>
-                    ) : emailStatus.status === 'pending' ? (
-                      <>
-                        <AlertCircle className="text-yellow-600" size={18} />
-                        <div className="flex-1">
-                          <p className="text-yellow-800 text-sm font-medium">
-                            ⏳ Aguardando Aprovação
-                          </p>
-                          <p className="text-yellow-600 text-xs">
-                            Seu pagamento está sendo processado. Aguarde a confirmação.
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="text-red-600" size={18} />
-                        <div className="flex-1">
-                          <p className="text-red-800 text-sm font-medium">
-                            ❌ Pagamento Não Encontrado
-                          </p>
-                          <p className="text-red-600 text-xs">
-                            Este email não possui pagamento confirmado no sistema.
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-600">{error}</p>
               )}
-
-              <button
-                type="submit"
-                disabled={isLoading || !canProceedWithLogin()}
-                className={`w-full py-4 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl ${
-                  !canProceedWithLogin()
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
-                }`}
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    <span>
-                      {!canProceedWithLogin() 
-                        ? emailStatus && !emailStatus.hasAccess
-                          ? 'Acesso Negado'
-                          : 'Verificando...'
-                        : 'Entrar'
-                      }
-                    </span>
-                    {canProceedWithLogin() && <ArrowRight size={18} />}
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Info box */}
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-blue-600 text-sm">💡</span>
-                </div>
-                <div>
-                  <p className="text-blue-800 text-sm font-medium mb-1">
-                    Como funciona?
-                  </p>
-                  <p className="text-blue-600 text-xs leading-relaxed">
-                    Digite seu email para verificar se possui acesso. O sistema verifica automaticamente se você está na lista de emails autorizados.
-                  </p>
-                </div>
-              </div>
             </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-4 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  <span>{mode === 'signup' ? 'Cadastrando...' : 'Entrando...'}</span>
+                </>
+              ) : (
+                <>
+                  <span>{mode === 'signup' ? 'Cadastrar' : 'Entrar'}</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
 
-            {/* Box de contato */}
-            {emailStatus && !emailStatus.hasAccess && (
-              <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-orange-600 text-sm">📧</span>
-                  </div>
-                  <div>
-                    <p className="text-orange-800 text-sm font-medium mb-1">
-                      Precisa de acesso?
-                    </p>
-                    <p className="text-orange-600 text-xs leading-relaxed mb-2">
-                      Entre em contato conosco para solicitar acesso ao BrincaFácil.
-                    </p>
-                    <button
-                      onClick={() => window.open('/support', '_blank')}
-                      className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg transition-colors duration-200"
-                    >
-                      Solicitar Acesso
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Features preview */}
-        <div className="mt-8 grid grid-cols-3 gap-3">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-md border-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-white text-lg">🎮</span>
-            </div>
-            <p className="text-xs text-gray-700 font-medium leading-tight">Brincadeiras Personalizadas</p>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-md border-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-white text-lg">📺</span>
-            </div>
-            <p className="text-xs text-gray-700 font-medium leading-tight">Desenhos Educativos</p>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-md border-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <span className="text-white text-lg">💡</span>
-            </div>
-            <p className="text-xs text-gray-700 font-medium leading-tight">Dicas para Pais</p>
+          {/* Mensagem informativa no rodapé */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-xs text-gray-500 text-center leading-relaxed">
+              Use o mesmo e-mail da compra. A liberação do acesso acontece automaticamente em até 30 minutos após a confirmação do pagamento.
+            </p>
           </div>
         </div>
       </div>
