@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Sessão - BrincaFácil</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Sessão - BrincaFácil</h1>
+        
+        <div>
+            <h3>Controles de Teste:</h3>
+            <button onclick="createTestSession()">Criar Sessão de Teste</button>
+            <button onclick="checkSession()">Verificar Sessão</button>
+            <button onclick="clearSession()">Limpar Sessão</button>
+            <button onclick="reloadPage()">Recarregar Página</button>
+        </div>
+        
+        <div>
+            <h3>Logs de Debug:</h3>
+            <div id="logs" class="log">Clique em "Verificar Sessão" para começar...</div>
+        </div>
+        
+        <div>
+            <h3>Estado Atual:</h3>
+            <div id="status" class="log">Aguardando verificação...</div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            logs.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function createTestSession() {
+            log('🔧 Criando sessão de teste...', 'warning');
+            
+            const testUser = {
+                id: 'test-user-123',
+                email: 'teste@exemplo.com',
+                user_metadata: {
+                    name: 'Usuário Teste'
+                }
+            };
+            
+            const testChild = {
+                id: 'child-test-123',
+                name: 'Criança Teste',
+                age: 5,
+                avatar: '🧒',
+                interests: ['brincadeiras', 'desenhos'],
+                space: 'casa',
+                companionship: 'sozinho'
+            };
+            
+            try {
+                localStorage.setItem('brincafacil-user', JSON.stringify(testUser));
+                localStorage.setItem('brincafacil-child', JSON.stringify(testChild));
+                log('✅ Sessão de teste criada com sucesso!', 'success');
+                checkSession();
+            } catch (error) {
+                log(`❌ Erro ao criar sessão: ${error.message}`, 'error');
+            }
+        }
+
+        function checkSession() {
+            log('🔍 Verificando sessão atual...', 'info');
+            
+            try {
+                const storedUser = localStorage.getItem('brincafacil-user');
+                const storedChild = localStorage.getItem('brincafacil-child');
+                
+                log(`📊 Dados no localStorage:`, 'info');
+                log(`  - brincafacil-user: ${storedUser ? 'presente' : 'ausente'}`, storedUser ? 'success' : 'error');
+                log(`  - brincafacil-child: ${storedChild ? 'presente' : 'ausente'}`, storedChild ? 'success' : 'error');
+                
+                if (storedUser && storedChild) {
+                    const user = JSON.parse(storedUser);
+                    const child = JSON.parse(storedChild);
+                    
+                    log(`👤 Usuário encontrado: ${user.email}`, 'success');
+                    log(`👶 Criança encontrada: ${child.name}`, 'success');
+                    
+                    // Simular a lógica do App.jsx
+                    const hasUser = !!user;
+                    const hasChild = !!child;
+                    const willRedirectToLogin = !hasUser;
+                    const willRedirectToSetup = hasUser && !hasChild;
+                    const willShowLayout = hasUser && hasChild;
+                    
+                    log(`🎯 Condições de renderização:`, 'info');
+                    log(`  - hasUser: ${hasUser}`, hasUser ? 'success' : 'error');
+                    log(`  - hasChild: ${hasChild}`, hasChild ? 'success' : 'error');
+                    log(`  - willRedirectToLogin: ${willRedirectToLogin}`, willRedirectToLogin ? 'error' : 'success');
+                    log(`  - willRedirectToSetup: ${willRedirectToSetup}`, willRedirectToSetup ? 'warning' : 'success');
+                    log(`  - willShowLayout: ${willShowLayout}`, willShowLayout ? 'success' : 'error');
+                    
+                    updateStatus(user, child, willRedirectToLogin, willRedirectToSetup, willShowLayout);
+                } else {
+                    log('❌ Nenhuma sessão encontrada', 'error');
+                    updateStatus(null, null, true, false, false);
+                }
+            } catch (error) {
+                log(`❌ Erro ao verificar sessão: ${error.message}`, 'error');
+                updateStatus(null, null, true, false, false);
+            }
+        }
+
+        function updateStatus(user, child, willRedirectToLogin, willRedirectToSetup, willShowLayout) {
+            const status = document.getElementById('status');
+            
+            let statusText = '';
+            if (willRedirectToLogin) {
+                statusText = '🔴 REDIRECIONANDO PARA LOGIN';
+            } else if (willRedirectToSetup) {
+                statusText = '🟡 REDIRECIONANDO PARA SETUP DA CRIANÇA';
+            } else if (willShowLayout) {
+                statusText = '🟢 MOSTRANDO LAYOUT PRINCIPAL';
+            } else {
+                statusText = '⚪ ESTADO INDEFINIDO';
+            }
+            
+            status.innerHTML = `
+                <strong>${statusText}</strong>
+                ${user ? `<br>👤 Usuário: ${user.email}` : ''}
+                ${child ? `<br>👶 Criança: ${child.name}` : ''}
+                <br>📊 Condições:
+                <br>  - Tem usuário: ${!!user}
+                <br>  - Tem criança: ${!!child}
+                <br>  - Vai para login: ${willRedirectToLogin}
+                <br>  - Vai para setup: ${willRedirectToSetup}
+                <br>  - Mostra layout: ${willShowLayout}
+            `;
+        }
+
+        function clearSession() {
+            log('🗑️ Limpando sessão...', 'warning');
+            localStorage.removeItem('brincafacil-user');
+            localStorage.removeItem('brincafacil-child');
+            log('✅ Sessão limpa!', 'success');
+            checkSession();
+        }
+
+        function reloadPage() {
+            log('🔄 Recarregando página...', 'info');
+            window.location.reload();
+        }
+
+        // Verificar sessão ao carregar a página
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada - verificando sessão...', 'info');
+            checkSession();
+        });
+    </script>
+</body>
+</html>
+
+

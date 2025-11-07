@@ -1,7 +1,8 @@
-import React from 'react'
-import { Calendar, Clock, Star, Camera, TrendingUp } from 'lucide-react'
+import React, { useState } from 'react'
+import { Calendar, Clock, Star, Camera, TrendingUp, X } from 'lucide-react'
 
 export const ActivityHistory = ({ activities = [], maxItems = 5 }) => {
+  const [showModal, setShowModal] = useState(false)
   if (!activities || activities.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -139,12 +140,16 @@ export const ActivityHistory = ({ activities = [], maxItems = 5 }) => {
             </div>
 
             {/* Foto da Atividade */}
-            {activity.photo && (
+            {activity.photo && !activity.photo.startsWith('blob:') && (
               <div className="mb-3">
                 <img
                   src={activity.photo}
                   alt={`Foto da atividade ${activity.name}`}
-                  className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                  className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                  onError={(e) => {
+                    console.error('Erro ao carregar imagem do histórico:', activity.photo)
+                    e.target.style.display = 'none'
+                  }}
                 />
               </div>
             )}
@@ -181,9 +186,136 @@ export const ActivityHistory = ({ activities = [], maxItems = 5 }) => {
       {/* Botão para Ver Mais */}
       {activities.length > maxItems && (
         <div className="text-center">
-          <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+          <button 
+            onClick={() => setShowModal(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
             Ver mais {activities.length - maxItems} atividade{activities.length - maxItems !== 1 ? 's' : ''} →
           </button>
+        </div>
+      )}
+
+      {/* Modal com todas as atividades */}
+      {showModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20"
+          onClick={() => setShowModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center space-x-2">
+                <TrendingUp size={20} className="text-blue-500" />
+                <h3 className="text-lg font-bold text-gray-800">
+                  Todas as Atividades
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} className="text-gray-600" />
+              </button>
+            </div>
+
+            {/* Lista de Atividades com Scroll */}
+            <div className="overflow-y-auto flex-1 p-4 pb-6 space-y-3">
+              {activities.map((activity, index) => (
+                <div key={activity.id || index} className="card hover:shadow-lg transition-shadow">
+                  {/* Header da Atividade */}
+                  <div className="flex items-start space-x-3 mb-3">
+                    <div className={`p-2 rounded-lg bg-gradient-to-r ${getAreaColor(activity.area)} text-white text-sm font-medium`}>
+                      {getAreaIcon(activity.area)}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-bold text-gray-800 text-sm truncate">
+                          {activity.name}
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          {getAreaName(activity.area)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <span className="flex items-center space-x-1">
+                          <Calendar size={12} />
+                          <span>{formatDate(activity.date)}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Clock size={12} />
+                          <span>{activity.duration}min</span>
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs border ${getDifficultyColor(activity.difficulty)}`}>
+                          {activity.difficulty === 'easy' ? 'Fácil' : 
+                           activity.difficulty === 'medium' ? 'Médio' : 'Difícil'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={14}
+                          className={`${
+                            star <= activity.rating 
+                              ? 'text-yellow-500 fill-current' 
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Foto da Atividade */}
+                  {activity.photo && !activity.photo.startsWith('blob:') && (
+                    <div className="mb-3">
+                      <img
+                        src={activity.photo}
+                        alt={`Foto da atividade ${activity.name}`}
+                        className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                        onError={(e) => {
+                          console.error('Erro ao carregar imagem do histórico:', activity.photo)
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Comentário */}
+                  {activity.description && (
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-600 italic">
+                        "{activity.description}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Footer com Pontos e Diversão */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs text-gray-500">
+                        {getFunLevelIcon(activity.funLevel)} {activity.funLevel === 'fun' ? 'Muito Legal!' : 
+                         activity.funLevel === 'ok' ? 'Ok' : 'Chato'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Ganhou</span>
+                      <span className="text-lg font-bold text-green-600">
+                        +{activity.points} pontos
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

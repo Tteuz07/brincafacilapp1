@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { ArrowLeft, MessageCircle, Phone, Mail, HelpCircle, FileText, Star, Heart, Users, Lightbulb } from 'lucide-react'
+import { ArrowLeft, MessageCircle, HelpCircle, FileText, Star, Heart, Users, Lightbulb, Gift, Mail, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const SupportPage = () => {
   const navigate = useNavigate()
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [showContactForm, setShowContactForm] = useState(false)
+  const [showAffiliateModal, setShowAffiliateModal] = useState(false)
 
   const supportCategories = [
     {
@@ -97,26 +98,6 @@ const SupportPage = () => {
     ]
   }
 
-  const contactMethods = [
-    {
-      icon: <Mail size={20} />,
-      title: 'Email',
-      description: 'suporte@brincafacil.com',
-      action: () => window.open('mailto:suporte@brincafacil.com')
-    },
-    {
-      icon: <MessageCircle size={20} />,
-      title: 'Chat Online',
-      description: 'Disponível 24/7',
-      action: () => setShowContactForm(true)
-    },
-    {
-      icon: <Phone size={20} />,
-      title: 'Telefone',
-      description: '(11) 99999-9999',
-      action: () => window.open('tel:+5511999999999')
-    }
-  ]
 
   const renderFAQ = (categoryId) => {
     const categoryFAQs = faqs[categoryId] || []
@@ -213,39 +194,6 @@ const SupportPage = () => {
             ))}
           </div>
 
-          {/* Métodos de Contato */}
-          <div className="card">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-primary-400 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <MessageCircle size={24} className="text-white" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Precisa de Ajuda Personalizada?</h2>
-              <p className="text-gray-600 text-sm">Entre em contato conosco através de um dos canais abaixo</p>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4">
-              {contactMethods.map((method, index) => (
-                <button
-                  key={index}
-                  onClick={method.action}
-                  className="flex items-center space-x-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all duration-200 group"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-r from-primary-400 to-primary-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <div className="text-white">
-                      {method.icon}
-                    </div>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <h3 className="font-bold text-gray-800 mb-1">{method.title}</h3>
-                    <p className="text-gray-600 text-sm">{method.description}</p>
-                  </div>
-                  <div className="text-primary-500 group-hover:translate-x-1 transition-transform duration-200">
-                    →
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Informações Adicionais */}
           <div className="space-y-4">
@@ -254,43 +202,37 @@ const SupportPage = () => {
             </h3>
             
             <div className="grid grid-cols-1 gap-4">
-              <div className="card">
+              {/* Card Indique e Ganhe */}
+              <button
+                onClick={() => setShowAffiliateModal(true)}
+                className="card hover:shadow-lg transition-all duration-200 text-left"
+              >
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-gradient-to-r from-green-400 to-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Star size={24} className="text-white" />
+                  <div className="w-14 h-14 bg-gradient-to-r from-orange-400 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Gift size={24} className="text-white" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-800 mb-1">⭐ Avalie o App</h4>
+                    <h4 className="font-bold text-gray-800 mb-1">🎁 Indique e Ganhe</h4>
                     <p className="text-gray-600 text-sm leading-relaxed">
-                      Sua opinião é muito importante para nós! Ajude-nos a melhorar avaliando o app na loja.
+                      Indique o BrincaFácil e ganhe comissões! Seja nossa parceira e ganhe dinheiro enquanto ajuda famílias.
                     </p>
                   </div>
                 </div>
-              </div>
+              </button>
               
-              <div className="card">
+              {/* Card Sugestões */}
+              <div className="card hover:shadow-lg transition-all duration-200 text-left">
                 <div className="flex items-center space-x-4">
                   <div className="w-14 h-14 bg-gradient-to-r from-purple-400 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Heart size={24} className="text-white" />
+                    <Mail size={24} className="text-white" />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-800 mb-1">💡 Sugestões</h4>
-                    <p className="text-gray-600 text-sm leading-relaxed">
+                    <p className="text-gray-600 text-sm leading-relaxed mb-2">
                       Tem ideias para melhorar o app? Envie suas sugestões e ajude-nos a crescer!
                     </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="card">
-                <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Lightbulb size={24} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-800 mb-1">📚 Tutoriais</h4>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      Aprenda a usar todas as funcionalidades do app com nossos guias passo a passo.
+                    <p className="text-primary-500 text-sm font-semibold">
+                      Email: brincafacil@gmail.com
                     </p>
                   </div>
                 </div>
@@ -328,6 +270,109 @@ const SupportPage = () => {
 
       {/* Modal de contato */}
       {renderContactForm()}
+
+      {/* Modal Indique e Ganhe */}
+      {showAffiliateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center pb-20">
+          <div className="bg-white rounded-t-3xl w-full flex flex-col shadow-2xl" style={{ height: 'calc(100vh - 80px)', maxHeight: 'calc(100vh - 80px)' }} onClick={(e) => e.stopPropagation()}>
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-white to-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Indique e Ganhe
+              </h3>
+              <button
+                onClick={() => setShowAffiliateModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-all duration-200 active:scale-95"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-5 py-6 pb-8">
+              <div className="space-y-5">
+                {/* Ícone e Título */}
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Gift size={40} className="text-white" />
+                  </div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">
+                    Seja uma Afiliada BrincaFácil!
+                  </h4>
+                </div>
+
+                {/* Como Funciona */}
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+                  <h5 className="font-bold text-gray-800 mb-3 text-lg">📋 Passo a passo:</h5>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <span className="text-orange-600 font-bold text-lg">1.</span>
+                      <p className="text-gray-700 text-sm flex-1">
+                        Cadastre-se como afiliada através do link abaixo.
+                      </p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <span className="text-orange-600 font-bold text-lg">2.</span>
+                      <p className="text-gray-700 text-sm flex-1">
+                        Receba seu link exclusivo de indicação automaticamente.
+                      </p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <span className="text-orange-600 font-bold text-lg">3.</span>
+                      <p className="text-gray-700 text-sm flex-1">
+                        Compartilhe o BrincaFácil com outras famílias.
+                      </p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <span className="text-orange-600 font-bold text-lg">4.</span>
+                      <p className="text-gray-700 text-sm flex-1">
+                        Ganhe 30% de comissão por cada venda confirmada, paga direto pela Eduzz.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Benefícios */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h5 className="font-bold text-gray-800 mb-3">✨ Benefícios:</h5>
+                  <ul className="space-y-2.5 text-sm text-gray-700">
+                    <li className="flex items-start">
+                      <span className="text-orange-500 mr-2 text-base">✨</span>
+                      <span>Comissões reais e recorrentes em cada venda.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-orange-500 mr-2 text-base">⚡</span>
+                      <span>Pagamentos rápidos e seguros via Eduzz.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-orange-500 mr-2 text-base">🎯</span>
+                      <span>Bonificações e prêmios conforme seu desempenho.</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-orange-500 mr-2 text-base">📱</span>
+                      <span>Tudo pelo celular, de forma simples e prática.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Botão Quero ser Afiliada */}
+                <button
+                  onClick={() => {
+                    window.open('https://orbita.eduzz.com/affiliate/invite/2894302', '_blank', 'noopener,noreferrer')
+                  }}
+                  className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-600 hover:from-orange-600 hover:via-orange-700 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 transform hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    boxShadow: '0 10px 25px -5px rgba(255, 122, 0, 0.4), 0 10px 10px -5px rgba(255, 122, 0, 0.2)'
+                  }}
+                >
+                  <Gift className="w-5 h-5" />
+                  <span className="text-lg">Quero Ser Afiliada</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { 
-  Heart, 
   Trophy, 
   Star,
   Clock,
@@ -56,9 +54,17 @@ const ProfilePage = () => {
 
 
   const getActivityStats = () => {
-    const totalFavorites = favorites.length
-    const activityFavorites = favorites.filter(f => f.type === 'activity').length
-    const cartoonFavorites = favorites.filter(f => f.type === 'cartoon').length
+    const totalFavorites = favorites?.length || 0
+    const activityFavorites = favorites?.filter(f => f.type === 'activity').length || 0
+    const cartoonFavorites = favorites?.filter(f => f.type === 'cartoon').length || 0
+    
+    // Valores padrão para habits
+    const defaultHabits = {
+      reading: { streak: 0, goal: 30 },
+      exercise: { streak: 0, goal: 7 },
+      creativity: { hours: 0, goal: 25 },
+      sleep: { streak: 0, goal: 7 }
+    }
     
     // Usar dados reais do store ou valores padrão
     const development = childDevelopment || {
@@ -67,27 +73,25 @@ const ProfilePage = () => {
       weeklyGoal: 5,
       completedThisWeek: 0,
       currentStreak: 0,
-      habits: {
-        reading: { streak: 0, goal: 30 },
-        exercise: { streak: 0, goal: 7 },
-        creativity: { hours: 0, goal: 25 },
-        sleep: { streak: 0, goal: 7 }
-      }
+      habits: defaultHabits
     }
+    
+    // Garantir que habits existe e tem todas as propriedades
+    const habits = development.habits || defaultHabits
     
     return {
       totalFavorites,
       activityFavorites,
       cartoonFavorites,
-      weeklyGoal: development.weeklyGoal,
-      completedThisWeek: development.completedThisWeek,
-      streak: development.currentStreak,
-      totalPoints: development.totalPoints,
-      level: development.level,
-      readingStreak: development.habits.reading.streak,
-      exerciseDays: development.habits.exercise.streak,
-      creativeHours: development.habits.creativity.hours,
-      sleepStreak: development.habits.sleep.streak
+      weeklyGoal: development.weeklyGoal || 5,
+      completedThisWeek: development.completedThisWeek || 0,
+      streak: development.currentStreak || 0,
+      totalPoints: development.totalPoints || 0,
+      level: development.level || 1,
+      readingStreak: habits.reading?.streak || 0,
+      exerciseDays: habits.exercise?.streak || 0,
+      creativeHours: habits.creativity?.hours || 0,
+      sleepStreak: habits.sleep?.streak || 0
     }
   }
 
@@ -179,48 +183,6 @@ const ProfilePage = () => {
           activities={getActivityHistory()} 
           maxItems={3}
         />
-      </div>
-
-      {/* Links de Navegação */}
-       <div className="space-y-3">
-        <Link to="/favorites" className="block">
-          <div className="card hover:shadow-lg transition-shadow bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-xl bg-white shadow-sm text-pink-500">
-                <Heart size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800">Meus Favoritos</h3>
-                <p className="text-sm text-gray-600">{stats.totalFavorites} itens especiais salvos</p>
-              </div>
-              <div className="text-pink-400">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </Link>
-        <Link to="/settings" className="block">
-          <div className="card hover:shadow-lg transition-shadow bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-xl bg-white shadow-sm text-gray-500">
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.09-.16-.26-.25-.44-.25a.5.5 0 0 0-.42.24l-2.11 1.65a7.07 7.07 0 0 0-1.2-.98l-.32-2.65a.488.488 0 0 0-.49-.42h-4c-.24 0 -.43.18-.47.42l-.32 2.65c-.45.18-.87.42-1.2.98l-2.11-1.65a.5.5 0 0 0-.42-.24c-.18 0 -.35.09-.44.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98c0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.09.16.26.25.44.25a.5.5 0 0 0 .42-.24l2.11-1.65c.45-.18.87-.42 1.2-.98l.32 2.65c.05.24.24.42.47.42h4c.24 0 .43-.18.47-.42l.32-2.65c.45-.18.87-.42 1.2-.98l2.11 1.65c.19.15.42.24.42.24c.18 0 .35-.09.44-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65Z"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-800">Configurações</h3>
-                <p className="text-sm text-gray-600">Ajustes do app e conta</p>
-              </div>
-              <div className="text-gray-400">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </Link>
       </div>
 
 

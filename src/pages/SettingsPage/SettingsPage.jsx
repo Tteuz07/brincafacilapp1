@@ -8,13 +8,16 @@ import {
   Shield,
   RefreshCw,
   Volume2,
-  VolumeX
+  VolumeX,
+  ArrowLeft
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 import { supabase } from '../../lib/supabaseClient'
 import toast from 'react-hot-toast'
 
 const SettingsPage = () => {
+  const navigate = useNavigate()
   const { user, logout } = useAppStore()
   const [notifications, setNotifications] = useState(true)
   const [sound, setSound] = useState(true)
@@ -121,15 +124,18 @@ const SettingsPage = () => {
   return (
     <div className="container-app py-6 space-y-6">
       {/* Header das Configurações */}
-      <div className="card bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-slate-600 rounded-full flex items-center justify-center text-white shadow-lg">
-            <Settings size={28} />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-800">Configurações</h1>
-            <p className="text-gray-600">Personalize sua experiência no app</p>
-          </div>
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl transition-all"
+        >
+          <ArrowLeft size={20} className="text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">
+            Configurações ⚙️
+          </h1>
+          <p className="text-gray-600 text-sm">Personalize sua experiência no app</p>
         </div>
       </div>
 

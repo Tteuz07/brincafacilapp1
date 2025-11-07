@@ -38,18 +38,14 @@ const ActivityCard = ({ activity, compact = false }) => {
     e.stopPropagation()
     
     if (isActivityFavorited) {
-      const updated = favorites.filter(fav => !(fav.type === 'activity' && fav.activity_id === activity.id))
-      setFavorites(updated)
       const res = await removeFromFavorites('activity', activity.id)
       if (res?.error) {
-        useAppStore.getState().loadFavorites()
+        console.error('Erro ao remover favorito:', res.error)
       }
     } else {
-      const optimisticFav = { type: 'activity', activity_id: activity.id }
-      setFavorites([optimisticFav, ...favorites])
       const { error } = await addToFavorites('activity', activity.id)
       if (error) {
-        useAppStore.getState().loadFavorites()
+        console.error('Erro ao adicionar favorito:', error)
       }
     }
   }
@@ -145,6 +141,14 @@ const ActivityCard = ({ activity, compact = false }) => {
         <Link 
           to={`/activities/${activity.id}`}
           className="block group"
+          onClick={(e) => {
+            // Se o clique foi no botão de favorito, não navegar
+            if (e.target.closest('button[onClick*="handleFavoriteToggle"]') || 
+                e.target.closest('button')?.classList.contains('absolute')) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+          }}
         >
           <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform group-hover:scale-105 relative overflow-hidden p-0">
             {/* Imagem da atividade */}
@@ -169,7 +173,10 @@ const ActivityCard = ({ activity, compact = false }) => {
               {/* Botão de favorito */}
               <button
                 onClick={handleFavoriteToggle}
-                className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-lg"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-lg"
+                style={{ pointerEvents: 'auto' }}
               >
                 <Heart 
                   size={16} 
@@ -245,6 +252,14 @@ const ActivityCard = ({ activity, compact = false }) => {
       <Link 
         to={`/activities/${activity.id}`}
         className="block group"
+        onClick={(e) => {
+          // Se o clique foi no botão de favorito, não navegar
+          if (e.target.closest('button')?.classList.contains('absolute') ||
+              e.target.closest('button')?.getAttribute('onClick')?.includes('handleFavoriteToggle')) {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+        }}
       >
         <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform group-hover:scale-105 relative overflow-hidden p-0">
           {/* Imagem da atividade - LIMPA, SEM SOBREPOSIÇÕES */}
@@ -266,7 +281,10 @@ const ActivityCard = ({ activity, compact = false }) => {
             {/* Botão de favorito */}
             <button
               onClick={handleFavoriteToggle}
-              className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors shadow-md"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors shadow-md"
+              style={{ pointerEvents: 'auto' }}
             >
               <Heart 
                 size={18} 

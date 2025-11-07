@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { supabase } from '../lib/supabase'
 
 const useAppStore = create(
   persist(
@@ -59,27 +58,56 @@ const useAppStore = create(
           willBeAuthenticated: !!user
         })
         set({ user, isAuthenticated: !!user })
+        console.log('✅ SETUSER CONCLUÍDO - Estado atualizado:', {
+          user: !!user,
+          isAuthenticated: !!user
+        })
       },
       
       setLoading: (isLoading) => set({ isLoading }),
       
       logout: async () => {
-        // Limpar localStorage
+        console.log('🚪 LOGOUT - Limpando TODOS os dados do usuário do LocalStorage')
+        
+        // Limpar sessão do Supabase primeiro
+        try {
+          const { supabase } = await import('../lib/supabaseClient')
+          await supabase.auth.signOut()
+          console.log('✅ Sessão do Supabase removida')
+        } catch (error) {
+          console.warn('⚠️ Erro ao fazer signOut do Supabase:', error)
+        }
+        
+        // ✅ CRÍTICO: Limpar TODOS os dados do usuário do LocalStorage
+        // Manter apenas flags e sessão (que será limpa também)
         localStorage.removeItem('brincafacil-user')
         localStorage.removeItem('brincafacil-child')
+        localStorage.removeItem('brincafacil-child-development')
+        localStorage.removeItem('brincafacil-favorites')
+        localStorage.removeItem('brincafacil_perfil')
+        localStorage.removeItem('brincafacil_historico')
+        localStorage.removeItem('brincafacil_session')
         
-        // Limpar estado
+        // Manter apenas flags não relacionadas ao usuário:
+        // - brincafacil_migrado (flag de migração)
+        // - brincafacil_tooltips_completed (flags de tooltips)
+        // - bf_onboarding_done (será limpo quando trocar de conta)
+        
+        // Limpar TODO o estado do store
         set({ 
           user: null, 
           isAuthenticated: false,
           child: null,
-          favorites: []
+          favorites: [],
+          childDevelopment: null
         })
         
         // Disparar evento de logout
         window.dispatchEvent(new CustomEvent('brincafacil-auth-change', {
           detail: { user: null, child: null }
         }))
+        
+        console.log('✅ LOGOUT CONCLUÍDO - Todos os dados do usuário foram limpos')
       },
 
       // Actions do perfil da criança
@@ -99,8 +127,7 @@ const useAppStore = create(
         const updated = { ...current, ...developmentData }
         set({ childDevelopment: updated })
         
-        // Salvar no localStorage para persistência
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(updated))
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
       },
       
       // Registrar atividade de desenvolvimento
@@ -125,7 +152,41 @@ const useAppStore = create(
         const newLevel = Math.floor(newTotalPoints / 100) + 1
         
         // Atualizar meta semanal
-        const newCompletedThisWeek = current.completedThisWeek + 1
+        let newCompletedThisWeek = current.completedThisWeek + 1
+        let newWeeklyGoal = current.weeklyGoal
+        
+        // Se a meta foi completada, gerar uma nova meta progressiva
+        if (newCompletedThisWeek >= current.weeklyGoal) {
+          // Calcular nova meta progressiva (aumenta gradualmente)
+          // Progressão: 5 -> 7 -> 10 -> 12 -> 15 -> 18 -> 20 -> 25...
+          if (current.weeklyGoal <= 5) {
+            newWeeklyGoal = 7
+          } else if (current.weeklyGoal <= 7) {
+            newWeeklyGoal = 10
+          } else if (current.weeklyGoal <= 10) {
+            newWeeklyGoal = 12
+          } else if (current.weeklyGoal <= 12) {
+            newWeeklyGoal = 15
+          } else if (current.weeklyGoal <= 15) {
+            newWeeklyGoal = 18
+          } else if (current.weeklyGoal <= 18) {
+            newWeeklyGoal = 20
+          } else if (current.weeklyGoal <= 20) {
+            newWeeklyGoal = 25
+          } else {
+            // Para metas maiores, aumentar em 5
+            newWeeklyGoal = current.weeklyGoal + 5
+          }
+          
+          // Resetar contador para a nova meta
+          newCompletedThisWeek = 0
+          
+          console.log('🎯 NOVA META GERADA!', {
+            metaAnterior: current.weeklyGoal,
+            novaMeta: newWeeklyGoal,
+            completado: current.completedThisWeek
+          })
+        }
         
         // Atualizar sequência atual
         const newCurrentStreak = current.currentStreak + 1
@@ -136,13 +197,13 @@ const useAppStore = create(
           totalPoints: newTotalPoints,
           level: newLevel,
           completedThisWeek: newCompletedThisWeek,
+          weeklyGoal: newWeeklyGoal,
           currentStreak: newCurrentStreak
         }
         
         set({ childDevelopment: updated })
         
-        // Salvar no localStorage
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(updated))
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
         
         return updated
       },
@@ -178,7 +239,41 @@ const useAppStore = create(
         const newLevel = Math.floor(newTotalPoints / 100) + 1
         
         // Atualizar meta semanal
-        const newCompletedThisWeek = current.completedThisWeek + 1
+        let newCompletedThisWeek = current.completedThisWeek + 1
+        let newWeeklyGoal = current.weeklyGoal
+        
+        // Se a meta foi completada, gerar uma nova meta progressiva
+        if (newCompletedThisWeek >= current.weeklyGoal) {
+          // Calcular nova meta progressiva (aumenta gradualmente)
+          // Progressão: 5 -> 7 -> 10 -> 12 -> 15 -> 18 -> 20 -> 25...
+          if (current.weeklyGoal <= 5) {
+            newWeeklyGoal = 7
+          } else if (current.weeklyGoal <= 7) {
+            newWeeklyGoal = 10
+          } else if (current.weeklyGoal <= 10) {
+            newWeeklyGoal = 12
+          } else if (current.weeklyGoal <= 12) {
+            newWeeklyGoal = 15
+          } else if (current.weeklyGoal <= 15) {
+            newWeeklyGoal = 18
+          } else if (current.weeklyGoal <= 18) {
+            newWeeklyGoal = 20
+          } else if (current.weeklyGoal <= 20) {
+            newWeeklyGoal = 25
+          } else {
+            // Para metas maiores, aumentar em 5
+            newWeeklyGoal = current.weeklyGoal + 5
+          }
+          
+          // Resetar contador para a nova meta
+          newCompletedThisWeek = 0
+          
+          console.log('🎯 NOVA META GERADA!', {
+            metaAnterior: current.weeklyGoal,
+            novaMeta: newWeeklyGoal,
+            completado: current.completedThisWeek
+          })
+        }
         
         // Atualizar sequência atual
         const newCurrentStreak = current.currentStreak + 1
@@ -189,21 +284,23 @@ const useAppStore = create(
           totalPoints: newTotalPoints,
           level: newLevel,
           completedThisWeek: newCompletedThisWeek,
+          weeklyGoal: newWeeklyGoal,
           currentStreak: newCurrentStreak
         }
         
         set({ childDevelopment: updated })
         
-        // Salvar no localStorage
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(updated))
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
         
         return updated
       },
 
       // Registrar atividade de brincadeira específica
-      recordActivityFromCard: (activityId, area, activityData) => {
+      recordActivityFromCard: async (activityId, area, activityData) => {
         const current = get().childDevelopment
         const now = new Date().toISOString()
+        const activities = get().activities
+        const activity = activities.find(a => a.id === activityId)
         
         // Calcular pontos baseados na avaliação da criança
         let points = 10 // Base
@@ -258,7 +355,41 @@ const useAppStore = create(
         const newLevel = Math.floor(newTotalPoints / 100) + 1
         
         // Atualizar meta semanal
-        const newCompletedThisWeek = current.completedThisWeek + 1
+        let newCompletedThisWeek = current.completedThisWeek + 1
+        let newWeeklyGoal = current.weeklyGoal
+        
+        // Se a meta foi completada, gerar uma nova meta progressiva
+        if (newCompletedThisWeek >= current.weeklyGoal) {
+          // Calcular nova meta progressiva (aumenta gradualmente)
+          // Progressão: 5 -> 7 -> 10 -> 12 -> 15 -> 18 -> 20 -> 25...
+          if (current.weeklyGoal <= 5) {
+            newWeeklyGoal = 7
+          } else if (current.weeklyGoal <= 7) {
+            newWeeklyGoal = 10
+          } else if (current.weeklyGoal <= 10) {
+            newWeeklyGoal = 12
+          } else if (current.weeklyGoal <= 12) {
+            newWeeklyGoal = 15
+          } else if (current.weeklyGoal <= 15) {
+            newWeeklyGoal = 18
+          } else if (current.weeklyGoal <= 18) {
+            newWeeklyGoal = 20
+          } else if (current.weeklyGoal <= 20) {
+            newWeeklyGoal = 25
+          } else {
+            // Para metas maiores, aumentar em 5
+            newWeeklyGoal = current.weeklyGoal + 5
+          }
+          
+          // Resetar contador para a nova meta
+          newCompletedThisWeek = 0
+          
+          console.log('🎯 NOVA META GERADA!', {
+            metaAnterior: current.weeklyGoal,
+            novaMeta: newWeeklyGoal,
+            completado: current.completedThisWeek
+          })
+        }
         
         // Atualizar sequência atual
         const newCurrentStreak = current.currentStreak + 1
@@ -269,19 +400,46 @@ const useAppStore = create(
           totalPoints: newTotalPoints,
           level: newLevel,
           completedThisWeek: newCompletedThisWeek,
+          weeklyGoal: newWeeklyGoal,
           currentStreak: newCurrentStreak
         }
         
         set({ childDevelopment: updated })
         
-        // Salvar no localStorage
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(updated))
+        // ✅ NOVO: Salvar no Supabase também
+        try {
+          const { supabase } = await import('../lib/supabaseClient')
+          const { data: { user } } = await supabase.auth.getUser()
+          const userEmail = user?.email
+          
+          if (userEmail) {
+            const { salvarAtividade } = await import('../lib/storageService')
+            await salvarAtividade(userEmail, {
+              id: String(activityId),
+              nome: activityData.name || activity?.title || 'Atividade',
+              avaliacao: activityData.rating,
+              comentario: activityData.comment || activityData.description || null,
+              foto: activityData.photo || null,
+              duracao: activityData.duration,
+              dificuldade: activityData.difficulty,
+              diversao: activityData.funLevel,
+              data: activityData.date || now
+            })
+            console.log('✅ Atividade salva no Supabase')
+          }
+        } catch (error) {
+          console.warn('⚠️ Erro ao salvar atividade no Supabase (continuando com localStorage):', error)
+        }
+        
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
+        // O child-development será salvo automaticamente quando salvar o perfil
         
         return {
           updated,
           points: finalPoints,
           area: area,
-          newLevel: newLevel
+          newLevel: newLevel,
+          newGoal: newWeeklyGoal !== current.weeklyGoal ? newWeeklyGoal : null
         }
       },
       
@@ -325,23 +483,62 @@ const useAppStore = create(
         }
         
         set({ childDevelopment: current })
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(current))
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
         
         return current
       },
       
       // Carregar dados de desenvolvimento salvos
-      loadChildDevelopment: () => {
+      loadChildDevelopment: async () => {
+        // ✅ CRÍTICO: Buscar do Supabase (NÃO do LocalStorage)
         try {
-          const saved = localStorage.getItem('brincafacil-child-development')
-          if (saved) {
-            const parsed = JSON.parse(saved)
-            set({ childDevelopment: parsed })
-            return parsed
+          const { supabase } = await import('../lib/supabaseClient')
+          const { data: { user } } = await supabase.auth.getUser()
+          const userEmail = user?.email
+          
+          if (userEmail) {
+            const { buscarPerfil } = await import('../lib/storageService')
+            const { success, data: perfil } = await buscarPerfil(userEmail)
+            
+            if (success && perfil) {
+              // Converter dados do perfil para formato childDevelopment
+              const data = {
+                cognitive: {
+                  progress: perfil.pontos_cognitivo || 0,
+                  activities: [],
+                  lastUpdated: perfil.ultima_atividade_data || null
+                },
+                motor: {
+                  progress: perfil.pontos_motor || 0,
+                  activities: [],
+                  lastUpdated: perfil.ultima_atividade_data || null
+                },
+                social: {
+                  progress: perfil.pontos_social || 0,
+                  activities: [],
+                  lastUpdated: perfil.ultima_atividade_data || null
+                },
+                emotional: {
+                  progress: perfil.pontos_emocional || 0,
+                  activities: [],
+                  lastUpdated: perfil.ultima_atividade_data || null
+                },
+                totalPoints: (perfil.pontos_cognitivo || 0) + (perfil.pontos_motor || 0) + (perfil.pontos_social || 0) + (perfil.pontos_emocional || 0),
+                level: perfil.nivel || 1,
+                weeklyGoal: perfil.meta_semanal || 5,
+                completedThisWeek: 0,
+                currentStreak: perfil.dias_consecutivos || 0
+              }
+              
+              set({ childDevelopment: data })
+              return data
+            }
           }
         } catch (error) {
-          console.error('Erro ao carregar dados de desenvolvimento:', error)
+          console.warn('⚠️ Erro ao carregar dados de desenvolvimento do Supabase:', error)
         }
+        
+        // Se não há dados, retornar null (será inicializado quando necessário)
         return null
       },
       
@@ -355,64 +552,152 @@ const useAppStore = create(
         }
         
         set({ childDevelopment: updated })
-        localStorage.setItem('brincafacil-child-development', JSON.stringify(updated))
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
         
         return updated
       },
       
-      updateChild: async (childData) => {
-        const { user } = get()
-        if (!user) return { error: 'Usuário não autenticado' }
+      // Limpar localStorage das atividades e resetar dados
+      clearActivityStorage: () => {
+        console.log('🧹 Limpando localStorage das atividades...')
         
-        if (!supabase) {
-          // Salvar localmente
-          console.warn('Supabase não configurado - salvando localmente')
-          const childWithId = { 
-            ...childData, 
-            id: 'child-' + Date.now(),
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-          set({ child: childWithId })
-          return { data: childWithId, error: null }
+        // Limpar localStorage
+        localStorage.removeItem('brincafacil-child-development')
+        
+        // Resetar dados de desenvolvimento para valores padrão
+        const defaultData = {
+          cognitive: { progress: 0, activities: [], lastUpdated: null },
+          motor: { progress: 0, activities: [], lastUpdated: null },
+          social: { progress: 0, activities: [], lastUpdated: null },
+          emotional: { progress: 0, activities: [], lastUpdated: null },
+          habits: {
+            reading: { streak: 0, goal: 30, lastActivity: null },
+            exercise: { streak: 0, goal: 7, lastActivity: null },
+            creativity: { hours: 0, goal: 25, lastActivity: null },
+            sleep: { streak: 0, goal: 7, lastActivity: null }
+          },
+          achievements: [],
+          totalPoints: 0,
+          level: 1,
+          weeklyGoal: 5,
+          completedThisWeek: 0,
+          currentStreak: 0
         }
         
-        try {
-          const { data, error } = await supabase
-            .from('children_profiles')
-            .upsert({
-              user_id: user.id,
-              ...childData,
-              updated_at: new Date().toISOString()
+        set({ childDevelopment: defaultData })
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
+        
+        console.log('✅ Dados de desenvolvimento resetados!')
+        
+        return defaultData
+      },
+      
+      // Limpar apenas as fotos antigas (blob URLs) das atividades
+      cleanOldActivityPhotos: () => {
+        console.log('🧹 Limpando fotos antigas (blob URLs) das atividades...')
+        
+        const current = get().childDevelopment
+        if (!current) return current
+        
+        let hasChanges = false
+        const areas = ['cognitive', 'motor', 'social', 'emotional']
+        
+        // Limpar fotos antigas de todas as áreas
+        areas.forEach(area => {
+          if (current[area]?.activities) {
+            current[area].activities = current[area].activities.map(activity => {
+              // Se a foto é uma blob URL (começa com "blob:"), remover
+              if (activity.photo && activity.photo.startsWith('blob:')) {
+                console.log(`🗑️ Removendo foto antiga (blob URL) da atividade: ${activity.name}`)
+                hasChanges = true
+                return { ...activity, photo: null }
+              }
+              return activity
             })
-            .select()
-            .single()
-          
-          if (error) throw error
-          
-          set({ child: data })
-          return { data, error: null }
-        } catch (error) {
-          console.error('Erro ao atualizar perfil da criança:', error)
-          return { data: null, error }
+          }
+        })
+        
+        if (hasChanges) {
+          set({ childDevelopment: current })
+          // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
+          console.log('✅ Fotos antigas removidas! As atividades mantêm os outros dados.')
+        } else {
+          console.log('ℹ️ Nenhuma foto antiga encontrada para remover.')
         }
+        
+        return current
+      },
+      
+      updateChild: async (childData) => {
+        // Não depender do user do store - pode usar Supabase Auth diretamente
+        // Salvar localmente
+        console.log('💾 Salvando perfil da criança localmente', childData)
+        
+        // Tentar obter email da sessão do Supabase se disponível
+        let userEmail = null
+        try {
+          const { supabase } = await import('../lib/supabaseClient')
+          const { data: { user } } = await supabase.auth.getUser()
+          userEmail = user?.email
+        } catch (e) {
+          console.warn('Não foi possível obter email do Supabase:', e)
+        }
+        
+        const childWithId = { 
+          ...childData, 
+          id: childData.id || 'child-' + Date.now(),
+          user_email: userEmail,
+          created_at: childData.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        
+        set({ child: childWithId })
+        console.log('✅ Perfil da criança salvo no store:', childWithId)
+        
+        // ✅ CRÍTICO: Salvar APENAS no Supabase (NÃO no LocalStorage)
+        try {
+          if (userEmail) {
+            const { salvarPerfil } = await import('../lib/storageService')
+            const childDevelopment = get().childDevelopment || {}
+            
+            await salvarPerfil(userEmail, {
+              nome: childData.name,
+              idade: childData.age,
+              avatar: childData.avatar || '👶',
+              interesses: childData.interests || [],
+              espaco: childData.space ? [childData.space] : [],
+              companhia: childData.companionship ? [childData.companionship] : [],
+              pontos_cognitivo: childDevelopment.cognitive?.progress || 0,
+              pontos_motor: childDevelopment.motor?.progress || 0,
+              pontos_social: childDevelopment.social?.progress || 0,
+              pontos_emocional: childDevelopment.emotional?.progress || 0,
+              nivel: childDevelopment.level || 1,
+              meta_semanal: childDevelopment.weeklyGoal || 5,
+              dias_consecutivos: childDevelopment.currentStreak || 0,
+              ultima_atividade_data: childDevelopment.cognitive?.lastUpdated || null
+            })
+            console.log('✅ Perfil salvo no Supabase')
+          }
+        } catch (error) {
+          console.error('❌ Erro ao salvar perfil no Supabase:', error)
+          // Não salvar no LocalStorage - isso causaria o bug de dados compartilhados
+        }
+        
+        // ❌ NÃO SALVAR NO LOCALSTORAGE - dados ficam apenas no Supabase
+        
+        return { data: childWithId, error: null }
       },
 
       // Actions de brincadeiras
       setActivities: (activities) => set({ activities }),
       
       loadActivities: async () => {
-        if (!supabase) {
-          // LIMPEZA AGRESSIVA DO CACHE
-          localStorage.clear()
-          console.log('🧹 CACHE LIMPO COMPLETAMENTE')
+        console.log('🔄 INICIANDO CARREGAMENTO DE ATIVIDADES...')
           
-          // Forçar atualização do estado
-          console.log('🔄 FORÇANDO ATUALIZAÇÃO DAS ATIVIDADES')
+        // SEMPRE usar dados locais, não Supabase
+        console.log('🔄 CARREGANDO ATIVIDADES LOCAIS...')
           
-          
-          // Atividades disponíveis
+        // Atividades disponíveis
           const demoActivities = [
             {
               id: 1,
@@ -871,7 +1156,7 @@ const useAppStore = create(
                 'Versão avançada: Adicione obstáculos ou túneis no percurso',
                 'Modo cooperativo: Duas crianças controlam o mesmo copo',
                 'Versão com obstáculos: Coloque pequenos cones para desviar',
-                'Modo relay: Passem o controle do copo entre participantes',
+                'Modo relay: Passem o papelão de um para outro',
                 'Versão noturna: Use copos que brilham no escuro',
                 'Desafio duplo: Cada criança controla dois copos simultaneamente'
               ],
@@ -1011,7 +1296,7 @@ const useAppStore = create(
               created_at: new Date().toISOString()
             },
             {
-              id: 20,
+              id: 15,
               title: 'Encaixe das Caixas de Ovos',
               description: 'Brincadeira onde as crianças precisam encaixar formas coloridas cortadas de caixas de ovos nas pontas correspondentes. Desenvolve raciocínio lógico, reconhecimento de cores, coordenação motora fina e resolução de problemas.',
               instructions: [
@@ -1655,7 +1940,7 @@ const useAppStore = create(
                 'Versão com argolas menores: aumente a dificuldade usando argolas menores'
               ],
               image_url: '/Brincadeiras/1..png',
-              video_url: '/Brincadeiras/1.mp4',
+              video_url: 'https://youtube.com/shorts/lSdHl6KzzOE',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1707,7 +1992,7 @@ const useAppStore = create(
                 'Versão com códigos 3D: use diferentes alturas ou tamanhos de bolinhas'
               ],
               image_url: '/Brincadeiras/2..png',
-              video_url: '/Brincadeiras/2.mp4',
+              video_url: 'https://youtube.com/shorts/dNnWu-QgSvQ',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1758,7 +2043,7 @@ const useAppStore = create(
                 'Versão com sequência: crie uma ordem específica para encaixar as argolas'
               ],
               image_url: '/Brincadeiras/3..png',
-              video_url: '/Brincadeiras/3.mp4',
+              video_url: 'https://youtube.com/shorts/QpAXeeZ-0OA',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1809,7 +2094,7 @@ const useAppStore = create(
                 'Versão com mais cores: aumente a dificuldade usando mais cores diferentes'
               ],
               image_url: '/Brincadeiras/5..png',
-              video_url: '/Brincadeiras/5.mp4',
+              video_url: 'https://youtube.com/shorts/yMdhre4XgWk',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1861,7 +2146,7 @@ const useAppStore = create(
                 'Versão com regras especiais: crie regras próprias para tornar mais divertido'
               ],
               image_url: '/Brincadeiras/6..png',
-              video_url: '/Brincadeiras/6.mp4',
+              video_url: 'https://youtube.com/shorts/piQiioUe0pA',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1911,7 +2196,7 @@ const useAppStore = create(
                 'Versão com obstáculos: adicione pequenos obstáculos no caminho'
               ],
               image_url: '/Brincadeiras/7..png',
-              video_url: '/Brincadeiras/7.2.mp4',
+              video_url: 'https://youtube.com/shorts/DBHiKEe4r3I',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -1964,7 +2249,7 @@ const useAppStore = create(
                 'Versão torneio: organize um campeonato entre vários jogadores'
               ],
               image_url: '/Brincadeiras/8..png',
-              video_url: '/Brincadeiras/8.mp4',
+              video_url: 'https://youtube.com/shorts/4UrFCSf-Clc',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2017,7 +2302,7 @@ const useAppStore = create(
                 'Versão com contas de três números: adicione mais quadrados na equação'
               ],
               image_url: '/Brincadeiras/9..png',
-              video_url: '/Brincadeiras/9.mp4',
+              video_url: 'https://youtube.com/shorts/iONblHDrKEs',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2072,7 +2357,7 @@ const useAppStore = create(
                 'Versão com obstáculos: crie uma pista com obstáculos para contornar'
               ],
               image_url: '/Brincadeiras/10..png',
-              video_url: '/Brincadeiras/10.mp4',
+              video_url: 'https://youtube.com/shorts/u0LDZ6zC8tE',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2124,7 +2409,7 @@ const useAppStore = create(
                 'Versão com números: substitua cores por números para ensinar sequências numéricas'
               ],
               image_url: '/Brincadeiras/11..png',
-              video_url: '/Brincadeiras/11.mp4',
+              video_url: 'https://youtube.com/shorts/a6aUfpJm82Y',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2176,7 +2461,7 @@ const useAppStore = create(
                 'Versão com obstáculos: adicione pequenos obstáculos no campo'
               ],
               image_url: '/Brincadeiras/12..png',
-              video_url: '/Brincadeiras/12.mp4',
+              video_url: 'https://youtube.com/shorts/CUkB1y18zeo',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2228,7 +2513,7 @@ const useAppStore = create(
                 'Versão com velcro: use velcro para fixar as formas temporariamente'
               ],
               image_url: '/Brincadeiras/13..png',
-              video_url: '/Brincadeiras/13.mp4',
+              video_url: 'https://youtube.com/shorts/7HUmOeN0aB8',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2280,7 +2565,7 @@ const useAppStore = create(
                 'Versão com números: substitua formas por números para ensinar classificação numérica'
               ],
               image_url: '/Brincadeiras/14..png',
-              video_url: '/Brincadeiras/14.mp4',
+              video_url: 'https://youtube.com/shorts/WXdRG8rdjqU',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2334,7 +2619,7 @@ const useAppStore = create(
                 'Versão com pontuação diferente: cada cesta vale pontos diferentes'
               ],
               image_url: '/Brincadeiras/15..png',
-              video_url: '/Brincadeiras/15.mp4',
+              video_url: 'https://youtube.com/shorts/DKMEQb3ucKI',
               active: true,
               created_at: new Date().toISOString()
             },
@@ -2384,10 +2669,10 @@ const useAppStore = create(
                 'Versão com números: crie padrões numéricos usando os pinos'
               ],
               image_url: '/Brincadeiras/16..png',
-              video_url: '/Brincadeiras/16.mp4',
+              video_url: 'https://youtube.com/shorts/Jp2nogIj92Q',
               active: true,
               created_at: new Date().toISOString()
-            }
+            },
           ]
           
           // Log para debug - VERIFICAÇÃO COMPLETA
@@ -2491,6 +2776,9 @@ const useAppStore = create(
           }
           
           // Atualização completa
+          console.log('📊 TOTAL DE ATIVIDADES CARREGADAS:', demoActivities.length)
+          console.log('📋 LISTA DE ATIVIDADES:', demoActivities.map(a => ({ id: a.id, title: a.title })))
+          
           set({ 
             activities: demoActivities,
             cachedData: { 
@@ -2499,53 +2787,51 @@ const useAppStore = create(
             }
           })
           
-          // DEBUG: Log todas as atividades com imagens
-          console.log('🖼️ ATIVIDADES COM IMAGENS:', demoActivities
-            .filter(a => a.image_url || a.image)
-            .map(a => ({ title: a.title, image_url: a.image_url, image: a.image }))
-          )
-          
-          return { data: demoActivities, error: null }
-        }
+        // DEBUG: Log todas as atividades com imagens
+        console.log('🖼️ ATIVIDADES COM IMAGENS:', demoActivities
+          .filter(a => a.image_url || a.image)
+          .map(a => ({ title: a.title, image_url: a.image_url, image: a.image }))
+        )
         
-        try {
-          const { data, error } = await supabase
-            .from('activities')
-            .select('*')
-            .eq('active', true)
-            .order('created_at', { ascending: false })
-          
-          if (error) throw error
-          
-          set({ activities: data })
-          
-          // Atualizar cache offline
-          set({ 
-            cachedData: { 
-              ...get().cachedData, 
-              activities: data,
-              lastUpdated: new Date().toISOString()
-            }
-          })
-          
-          return { data, error: null }
-        } catch (error) {
-          console.error('Erro ao carregar brincadeiras:', error)
-          // Em caso de erro, usar dados do cache
-          const cachedActivities = get().cachedData.activities
-          if (cachedActivities.length > 0) {
-            set({ activities: cachedActivities })
+        // Log para debug - VERIFICAÇÃO COMPLETA
+        console.log('🎯 CARREGANDO ATIVIDADES:', demoActivities.length)
+        console.log('🎬 ATIVIDADES PREMIUM:', demoActivities.filter(a => a.video_url).length)
+        console.log('📚 ATIVIDADES TRADICIONAIS:', demoActivities.filter(a => !a.video_url).length)
+        console.log('✅ NOVA ATIVIDADE PREMIUM: Encaixe das Caixas de Ovos')
+        console.log('🎮 NOVAS ATIVIDADES TRADICIONAIS: 15 brincadeiras clássicas adicionadas')
+        console.log('🧠 FOCO: Raciocínio lógico, coordenação motora e pensamento estratégico')
+        console.log('🎨 TODAS COM IMAGENS: URLs do Unsplash para visualização')
+        console.log('📺 DESENHOS ATUALIZADOS: Bluey, Caillou, Comic, Puffin Rock, Daniel Tigre, Show da Luna, Detetive Labrador, Diário de Mika')
+        
+        // Atualização completa
+        console.log('📊 TOTAL DE ATIVIDADES CARREGADAS:', demoActivities.length)
+        console.log('📋 LISTA DE ATIVIDADES:', demoActivities.map(a => ({ id: a.id, title: a.title })))
+        
+        set({ 
+          activities: demoActivities,
+          cachedData: { 
+            ...get().cachedData, 
+            activities: demoActivities,
+            lastUpdated: new Date().toISOString()
           }
-          return { data: null, error }
-        }
+        })
+        
+        // DEBUG: Log todas as atividades com imagens
+        console.log('🖼️ ATIVIDADES COM IMAGENS:', demoActivities
+          .filter(a => a.image_url || a.image)
+          .map(a => ({ title: a.title, image_url: a.image_url, image: a.image }))
+        )
+        
+        return { data: demoActivities, error: null }
       },
 
       // Actions de desenhos
       setCartoons: (cartoons) => set({ cartoons }),
       
       loadCartoons: async () => {
-        if (!supabase) {
-          // Dados de demonstração para os 8 desenhos especificados
+        console.log('🎬 INICIANDO CARREGAMENTO DE DESENHOS...')
+        // SEMPRE usar dados locais, não Supabase
+        // Dados de demonstração para os desenhos especificados
           const demoCartoons = [
             {
               id: 1,
@@ -3178,100 +3464,221 @@ const useAppStore = create(
                   description: 'Séries educativas'
                 }
               ]
+            },
+            {
+              id: 15,
+              title: 'Franklin e sua Turma',
+              description: 'As aventuras da tartaruga Franklin e seus amigos que ensinam sobre amizade, cooperação, resolução de problemas e valores importantes da vida. Cada episódio traz lições valiosas sobre relacionamentos, trabalho em equipe e desenvolvimento social de forma educativa e divertida.',
+              category: 'educational',
+              min_age: 3,
+              max_age: 9,
+              duration: 22,
+              rating: 4.7,
+              image: '/desenhos/Franklin.jpg',
+              thumbnail_url: '/desenhos/Franklin.jpg',
+              gallery: [
+                '/desenhos/Franklin.jpg'
+              ],
+              video_url: 'https://www.youtube.com/watch?v=OShUnTViiao',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://www.youtube.com/watch?v=OShUnTViiao',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação educativa'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
+            },
+            {
+              id: 16,
+              title: 'Peixonauta',
+              description: 'As aventuras do Peixonauta que ensinam sobre ciência, exploração, descobertas e preservação do meio ambiente. Cada episódio traz lições valiosas sobre curiosidade científica, investigação e cuidado com a natureza de forma educativa e envolvente.',
+              category: 'educational',
+              min_age: 3,
+              max_age: 8,
+              duration: 12,
+              rating: 4.7,
+              image: '/desenhos/peixonauta.png',
+              thumbnail_url: '/desenhos/peixonauta.png',
+              gallery: [
+                '/desenhos/peixonauta.png'
+              ],
+              video_url: 'https://www.youtube.com/watch?v=-3kJTmQMhUw&list=PLti1oBGnROovkrRow5Fj1_GzNfiEO6np6',
+              watch_platforms: [
+                {
+                  name: 'YouTube',
+                  url: 'https://www.youtube.com/watch?v=-3kJTmQMhUw&list=PLti1oBGnROovkrRow5Fj1_GzNfiEO6np6',
+                  type: 'free',
+                  icon: '▶️',
+                  description: 'Episódios gratuitos no YouTube'
+                },
+                {
+                  name: 'TV Cultura',
+                  type: 'tv',
+                  icon: '📺',
+                  description: 'Canal aberto - programação educativa'
+                },
+                {
+                  name: 'Globo Play',
+                  type: 'streaming',
+                  icon: '🌐',
+                  description: 'Conteúdo educativo disponível'
+                },
+                {
+                  name: 'Amazon Prime Video',
+                  type: 'streaming',
+                  icon: '📦',
+                  description: 'Séries educativas'
+                }
+              ]
             }
-          ]
-          
-          set({ cartoons: demoCartoons })
-          set({ 
-            cachedData: { 
-              ...get().cachedData, 
-              cartoons: demoCartoons,
-              lastUpdated: new Date().toISOString()
-            }
-          })
-          
-          return { data: demoCartoons, error: null }
-        }
+        ]
         
-        try {
-          const { data, error } = await supabase
-            .from('cartoons')
-            .select('*')
-            .eq('active', true)
-            .order('title', { ascending: true })
-          
-          if (error) throw error
-          
-          set({ cartoons: data })
-          
-          // Atualizar cache offline
+        console.log('📊 TOTAL DE DESENHOS CARREGADOS:', demoCartoons.length)
+        console.log('📋 LISTA DE DESENHOS:', demoCartoons.map(c => ({ id: c.id, title: c.title })))
+        
+        set({ cartoons: demoCartoons })
           set({ 
             cachedData: { 
               ...get().cachedData, 
-              cartoons: data,
+            cartoons: demoCartoons,
               lastUpdated: new Date().toISOString()
             }
           })
           
-          return { data, error: null }
-        } catch (error) {
-          console.error('Erro ao carregar desenhos:', error)
-          const cachedCartoons = get().cachedData.cartoons
-          if (cachedCartoons.length > 0) {
-            set({ cartoons: cachedCartoons })
-          }
-          return { data: null, error }
-        }
+        return { data: demoCartoons, error: null }
       },
 
       // Actions de favoritos
       setFavorites: (favorites) => set({ favorites }),
       
       loadFavorites: async () => {
-        const { user } = get()
-        if (!user) return { error: 'Usuário não autenticado' }
+        console.log('⭐ CARREGANDO FAVORITOS DO SUPABASE...')
         
+        // ✅ CRÍTICO: Buscar APENAS do Supabase (NÃO do LocalStorage)
         try {
-          const { data, error } = await supabase
-            .from('user_favorites')
-            .select(`
-              *,
-              activities (*),
-              cartoons (*)
-            `)
-            .eq('user_id', user.id)
+          const { supabase } = await import('../lib/supabaseClient')
+          const { data: { user } } = await supabase.auth.getUser()
+          const userEmail = user?.email
           
-          if (error) throw error
+          if (!userEmail) {
+            console.warn('⚠️ Usuário não autenticado, não é possível carregar favoritos')
+            set({ favorites: [] })
+            return { data: [], error: null }
+          }
           
-          set({ favorites: data })
-          return { data, error: null }
+          const { buscarFavoritos } = await import('../lib/storageService')
+          const { success, data: favoritos } = await buscarFavoritos(userEmail)
+          
+          if (success && favoritos && favoritos.length > 0) {
+            // Converter formato do Supabase para formato do store
+            const cleanFavorites = favoritos.map(fav => ({
+              id: fav.id,
+              type: fav.tipo === 'brincadeira' ? 'activity' : 'cartoon',
+              itemId: fav.item_id, // Manter como string se vier do Supabase
+              addedAt: fav.created_at,
+              created_at: fav.created_at // Manter também para compatibilidade
+            }))
+            
+            console.log('📊 TOTAL DE FAVORITOS CARREGADOS DO SUPABASE:', cleanFavorites.length)
+            console.log('📋 FAVORITOS DETALHADOS:', cleanFavorites.map(f => ({ 
+              type: f.type, 
+              itemId: f.itemId, 
+              itemIdType: typeof f.itemId 
+            })))
+            set({ favorites: cleanFavorites })
+            return { data: cleanFavorites, error: null }
+          } else {
+            console.log('ℹ️ Nenhum favorito encontrado no Supabase')
+            set({ favorites: [] })
+            return { data: [], error: null }
+          }
         } catch (error) {
-          console.error('Erro ao carregar favoritos:', error)
-          return { data: null, error }
+          console.error('Erro ao carregar favoritos do Supabase:', error)
+          set({ favorites: [] })
+          return { data: [], error: null }
         }
       },
       
       addToFavorites: async (type, itemId) => {
-        const { user } = get()
-        if (!user) return { error: 'Usuário não autenticado' }
+        console.log('⭐ ADICIONANDO FAVORITO:', { type, itemId })
         
         try {
-          const { data, error } = await supabase
-            .from('user_favorites')
-            .insert({
-              user_id: user.id,
-              type: type, // 'activity' ou 'cartoon'
-              activity_id: type === 'activity' ? itemId : null,
-              cartoon_id: type === 'cartoon' ? itemId : null
-            })
-            .select()
-            .single()
+          // Recarregar favoritos para garantir dados atualizados
+          await get().loadFavorites()
+          const currentFavorites = get().favorites || []
           
-          if (error) throw error
+          // Verificar se já não está nos favoritos
+          const alreadyExists = currentFavorites.some(fav => 
+            fav.type === type && fav.itemId === itemId
+          )
           
-          // Recarregar favoritos
-          get().loadFavorites()
-          return { data, error: null }
+          if (alreadyExists) {
+            console.log('⚠️ FAVORITO JÁ EXISTE')
+            return { data: null, error: 'Já está nos favoritos' }
+          }
+          
+          const newFavorite = {
+            id: `fav-${Date.now()}-${Math.random()}`,
+            type: type,
+            itemId: itemId,
+            addedAt: new Date().toISOString()
+          }
+          
+          const updatedFavorites = [...currentFavorites, newFavorite]
+          
+          // ✅ NOVO: Salvar no Supabase também
+          try {
+            const { supabase } = await import('../lib/supabaseClient')
+            const { data: { user } } = await supabase.auth.getUser()
+            const userEmail = user?.email
+            
+            if (userEmail) {
+              const { adicionarFavorito } = await import('../lib/storageService')
+              const { activities, cartoons } = get()
+              
+              // Buscar nome do item
+              let itemNome = 'Item'
+              if (type === 'activity') {
+                const activity = activities.find(a => a.id === itemId)
+                itemNome = activity?.title || 'Brincadeira'
+              } else if (type === 'cartoon') {
+                const cartoon = cartoons.find(c => c.id === itemId)
+                itemNome = cartoon?.title || 'Desenho'
+              }
+              
+              await adicionarFavorito(userEmail, type === 'activity' ? 'brincadeira' : 'desenho', String(itemId), itemNome)
+              console.log('✅ Favorito salvo no Supabase')
+            }
+          } catch (error) {
+            console.warn('⚠️ Erro ao salvar favorito no Supabase:', error)
+          }
+          
+          // ❌ NÃO SALVAR NO LOCALSTORAGE - já foi salvo no Supabase
+          set({ favorites: updatedFavorites })
+          console.log('✅ FAVORITO ADICIONADO COM SUCESSO')
+          console.log('📊 TOTAL DE FAVORITOS AGORA:', updatedFavorites.length)
+          
+          return { data: newFavorite, error: null }
         } catch (error) {
           console.error('Erro ao adicionar favorito:', error)
           return { data: null, error }
@@ -3279,31 +3686,41 @@ const useAppStore = create(
       },
       
       removeFromFavorites: async (type, itemId) => {
-        const { user } = get()
-        if (!user) return { error: 'Usuário não autenticado' }
+        console.log('🗑️ REMOVENDO FAVORITO:', { type, itemId })
         
         try {
-          const query = supabase
-            .from('user_favorites')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('type', type)
+          // Recarregar favoritos para garantir dados atualizados
+          await get().loadFavorites()
+          const currentFavorites = get().favorites || []
           
-          if (type === 'activity') {
-            query.eq('activity_id', itemId)
-          } else {
-            query.eq('cartoon_id', itemId)
+          const updatedFavorites = currentFavorites.filter(fav => 
+            !(fav.type === type && fav.itemId === itemId)
+          )
+          
+          // ✅ NOVO: Remover do Supabase também
+          try {
+            const { supabase } = await import('../lib/supabaseClient')
+            const { data: { user } } = await supabase.auth.getUser()
+            const userEmail = user?.email
+            
+            if (userEmail) {
+              const { removerFavorito } = await import('../lib/storageService')
+              await removerFavorito(userEmail, type === 'activity' ? 'brincadeira' : 'desenho', String(itemId))
+              console.log('✅ Favorito removido do Supabase')
+            }
+          } catch (error) {
+            console.warn('⚠️ Erro ao remover favorito do Supabase:', error)
           }
           
-          const { error } = await query
-          if (error) throw error
+          // ❌ NÃO SALVAR NO LOCALSTORAGE - já foi removido do Supabase
+          set({ favorites: updatedFavorites })
+          console.log('✅ FAVORITO REMOVIDO COM SUCESSO')
+          console.log('📊 TOTAL DE FAVORITOS AGORA:', updatedFavorites.length)
           
-          // Recarregar favoritos
-          get().loadFavorites()
-          return { error: null }
+          return { data: null, error: null }
         } catch (error) {
           console.error('Erro ao remover favorito:', error)
-          return { error }
+          return { data: null, error }
         }
       },
 
@@ -3311,16 +3728,17 @@ const useAppStore = create(
       isFavorite: (type, itemId) => {
         const { favorites } = get()
         return favorites.some(fav => 
-          fav.type === type && 
-          (type === 'activity' ? fav.activity_id === itemId : fav.cartoon_id === itemId)
+          fav.type === type && fav.itemId === itemId
         )
       },
 
       // Inicializar dados da aplicação
       initializeApp: async () => {
         console.log('🚀 INICIALIZANDO APLICATIVO...')
-        console.log('👤 USUÁRIO ATUAL:', get().user)
-        console.log('🔐 AUTENTICADO:', get().isAuthenticated)
+        const currentState = get()
+        console.log('👤 USUÁRIO ATUAL:', currentState.user)
+        console.log('🔐 AUTENTICADO:', currentState.isAuthenticated)
+        console.log('👶 CRIANÇA ATUAL:', currentState.child)
         set({ isLoading: true })
         
         try {
@@ -3335,14 +3753,18 @@ const useAppStore = create(
           // Carregar dados de desenvolvimento da criança
           get().loadChildDevelopment()
           
-          // Se usuário autenticado, carregar dados pessoais
+          // Limpar fotos antigas (blob URLs) das atividades
+          get().cleanOldActivityPhotos()
+          
+          // SEMPRE tentar carregar perfil da criança (pode estar no localStorage ou Zustand persist)
+          console.log('👶 CARREGANDO PERFIL DA CRIANÇA...')
+          await get().loadChildProfile()
+          
+          // Se usuário autenticado, carregar dados pessoais adicionais
           const { user } = get()
           if (user) {
             console.log('👤 CARREGANDO DADOS PESSOAIS...')
-            await Promise.all([
-              get().loadFavorites(),
-              get().loadChildProfile()
-            ])
+            await get().loadFavorites()
           }
           
           // Verificar se precisa resetar dados semanais
@@ -3366,25 +3788,73 @@ const useAppStore = create(
 
       // Carregar perfil da criança
       loadChildProfile: async () => {
-        const { user } = get()
-        if (!user) return { error: 'Usuário não autenticado' }
+        console.log('👶 CARREGANDO PERFIL DA CRIANÇA DO CACHE LOCAL...')
         
         try {
-          const { data, error } = await supabase
-            .from('children_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
-          
-          if (error && error.code !== 'PGRST116') {
-            throw error
+          // Primeiro, verificar se já está no store (Zustand persist)
+          const currentState = get()
+          if (currentState.child && currentState.child.name) {
+            console.log('📊 PERFIL DA CRIANÇA JÁ NO STORE (Zustand persist):', {
+              name: currentState.child.name,
+              age: currentState.child.age,
+              id: currentState.child.id
+            })
+            // ❌ NÃO VERIFICAR LOCALSTORAGE - dados vêm apenas do Supabase
+            return { data: currentState.child, error: null }
           }
           
-          set({ child: data })
-          return { data, error: null }
+          // ✅ CRÍTICO: Se não está no store, buscar do Supabase (NÃO do LocalStorage)
+          try {
+            const { supabase } = await import('../lib/supabaseClient')
+            const { data: { user } } = await supabase.auth.getUser()
+            const userEmail = user?.email
+            
+            if (userEmail) {
+              const { buscarPerfil } = await import('../lib/storageService')
+              const { success, data: perfil } = await buscarPerfil(userEmail)
+              
+              if (success && perfil) {
+                // Converter formato do Supabase para formato do store
+                const child = {
+                  id: `child-${Date.now()}`,
+                  name: perfil.nome_crianca,
+                  age: perfil.idade,
+                  avatar: perfil.avatar || '👶',
+                  interests: perfil.interesses || [],
+                  space: perfil.espaco_disponivel?.[0] || null,
+                  companionship: perfil.companhia?.[0] || null,
+                  user_email: userEmail,
+                  created_at: perfil.created_at,
+                  updated_at: perfil.updated_at
+                }
+                
+                console.log('📊 PERFIL DA CRIANÇA CARREGADO DO SUPABASE:', {
+                  name: child.name,
+                  age: child.age,
+                  id: child.id
+                })
+                set({ child })
+                return { data: child, error: null }
+              }
+            }
+          } catch (error) {
+            console.warn('⚠️ Erro ao buscar perfil do Supabase:', error)
+          }
+          
+          console.log('⚠️ NENHUM PERFIL DE CRIANÇA ENCONTRADO')
+          // Não limpar o child se já existe no store
+          if (!currentState.child) {
+            set({ child: null })
+          }
+          return { data: currentState.child || null, error: null }
         } catch (error) {
           console.error('Erro ao carregar perfil da criança:', error)
-          return { data: null, error }
+          // Não limpar o child se já existe no store
+          const currentState = get()
+          if (!currentState.child) {
+            set({ child: null })
+          }
+          return { data: currentState.child || null, error }
         }
       }
     }),

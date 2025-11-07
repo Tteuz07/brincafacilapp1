@@ -1,156 +1,107 @@
-import { createClient } from '@supabase/supabase-js'
+// Sistema de autenticação simplificado usando apenas localStorage
+// Sem dependência do Supabase
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder'
-
-// Verificar se as credenciais são válidas
-const hasValidCredentials = supabaseUrl !== 'https://placeholder.supabase.co' && 
-                           supabaseAnonKey !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder'
-
-export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true
+// Lista de emails autorizados (pode ser modificada conforme necessário)
+const getAuthorizedEmails = () => {
+  const stored = localStorage.getItem('brincafacil-authorized-emails')
+  if (stored) {
+    return JSON.parse(stored)
   }
-}) : null
+  // Emails padrão de teste
+  return ['teste@exemplo.com', 'admin@brincafacil.com']
+}
 
 // Função para verificar se usuário tem acesso aprovado
 export const checkUserAccess = async (email) => {
   try {
-    if (supabase) {
-      // Primeiro tenta verificar na tabela authorized_emails
-      const { data: authorizedEmail, error: authError } = await supabase
-        .from('authorized_emails')
-        .select('email, active')
-        .eq('email', email)
-        .eq('active', true)
-        .single()
-      
-      if (authorizedEmail) {
-        return true
-      }
-      
-      // Se não encontrou na tabela authorized_emails, tenta na tabela users
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('status')
-        .eq('email', email)
-        .single()
-      
-      if (userError && userError.code !== 'PGRST116') {
-        console.warn('Erro ao verificar usuário:', userError)
-      }
-      
-      return userData?.status === 'approved'
-    }
+    console.log('🔍 VERIFICANDO ACESSO PARA:', email)
     
-    // Se não tiver Supabase, aceita alguns emails de teste
-    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
-    return testEmails.includes(email.toLowerCase())
+    const authorizedEmails = getAuthorizedEmails()
+    const hasAccess = authorizedEmails.includes(email.toLowerCase())
+    
+    console.log('✅ ACESSO VERIFICADO:', hasAccess)
+    return hasAccess
   } catch (error) {
-    console.error('Erro ao verificar acesso do usuário:', error)
-    // Em caso de erro, aceita emails de teste como fallback
-    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
-    return testEmails.includes(email.toLowerCase())
+    console.error('❌ ERRO AO VERIFICAR ACESSO:', error)
+    return false
   }
 }
 
 // Função para verificar status do usuário (approved/pending)
 export const getUserStatus = async (email) => {
   try {
-    if (supabase) {
-      // Primeiro tenta verificar na tabela authorized_emails
-      const { data: authorizedEmail, error: authError } = await supabase
-        .from('authorized_emails')
-        .select('email, active, created_at')
-        .eq('email', email)
-        .eq('active', true)
-        .single()
+    console.log('📊 VERIFICANDO STATUS PARA:', email)
+    
+    // 1. PRIORIDADE: Consulta direta na API da Kirvano (se configurado)
+    console.log('🔍 Consultando Kirvano diretamente...')
+    try {
+      const { checkPurchaseAccess } = await import('./kirvano.js')
+      const kirvanoResult = await checkPurchaseAccess(email)
       
-      if (authorizedEmail) {
-        return { 
+      if (kirvanoResult.hasAccess) {
+        console.log('✅ ACESSO APROVADO VIA KIRVANO:', kirvanoResult)
+        return {
           status: 'approved',
-          source: 'authorized_emails',
-          created_at: authorizedEmail.created_at
+          source: kirvanoResult.source,
+          created_at: kirvanoResult.purchaseData?.purchase_date,
+          purchase_data: kirvanoResult.purchaseData
         }
+      } else {
+        console.log('❌ SEM ACESSO NA KIRVANO:', kirvanoResult)
       }
-      
-      // Se não encontrou na tabela authorized_emails, tenta na tabela users
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('status, created_at, updated_at')
-        .eq('email', email)
-        .single()
-      
-      if (userError && userError.code !== 'PGRST116') {
-        console.warn('Erro ao verificar usuário:', userError)
-      }
-      
-      return userData || { status: 'not_found' }
+    } catch (kirvanoError) {
+      console.warn('⚠️ Erro ao consultar Kirvano:', kirvanoError)
     }
     
-    // Se não tiver Supabase, simula usuário aprovado
-    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
-    return testEmails.includes(email.toLowerCase()) 
-      ? { status: 'approved', source: 'test' } 
-      : { status: 'not_found' }
+    // 2. Verificar emails autorizados localmente
+    const authorizedEmails = getAuthorizedEmails()
+    const isAuthorized = authorizedEmails.includes(email.toLowerCase())
+    
+    const result = isAuthorized 
+      ? { 
+          status: 'approved', 
+          source: 'authorized_emails',
+          created_at: new Date().toISOString()
+        } 
+      : { 
+          status: 'not_found', 
+          source: 'not_found' 
+        }
+    
+    console.log('✅ STATUS VIA EMAILS AUTORIZADOS:', result)
+    return result
+    
   } catch (error) {
-    console.error('Erro ao verificar status do usuário:', error)
-    // Em caso de erro, verifica se é email de teste
-    const testEmails = ['teste@exemplo.com', 'admin@brincafacil.com']
-    return testEmails.includes(email.toLowerCase()) 
-      ? { status: 'approved', source: 'test_fallback' } 
-      : { status: 'error' }
+    console.error('❌ ERRO AO VERIFICAR STATUS:', error)
+    return { status: 'error', source: 'error', error: error.message }
   }
 }
 
-// Função simples para login
+// Função simples para login (sem Supabase)
 export const signInWithEmail = async (email) => {
-  if (!supabase) {
-    console.warn('Supabase não configurado - usando dados locais')
-    
-    const hasAccess = await checkUserAccess(email)
-    
-    if (!hasAccess) {
-      throw new Error('Email não autorizado para acesso')
-    }
-    
-    return { 
-      data: { 
-        user: { 
-          id: 'user-' + Date.now(), 
-          email: email,
-          created_at: new Date().toISOString()
-        } 
-      }, 
-      error: null 
-    }
-  }
-  
   try {
+    console.warn('Usando sistema de autenticação local (sem Supabase)')
+    
     const hasAccess = await checkUserAccess(email)
     
     if (!hasAccess) {
       throw new Error('Email não autorizado para acesso')
     }
     
-    // Login direto sem envio de email
-    const simulatedUser = {
+    const user = { 
       id: 'user-' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10),
       email: email,
-      created_at: new Date().toISOString(),
-      confirmed_at: new Date().toISOString(),
-      user_metadata: {}
+      created_at: new Date().toISOString()
     }
     
     return { 
       data: { 
-        user: simulatedUser,
+        user: user,
         session: {
-          access_token: 'simulated-token',
-          refresh_token: 'simulated-refresh',
+          access_token: 'local-token',
+          refresh_token: 'local-refresh',
           expires_in: 3600,
-          user: simulatedUser
+          user: user
         }
       }, 
       error: null 
@@ -159,5 +110,8 @@ export const signInWithEmail = async (email) => {
     return { data: null, error }
   }
 }
+
+// Exportar null para manter compatibilidade com código existente
+export const supabase = null
 
 export default supabase

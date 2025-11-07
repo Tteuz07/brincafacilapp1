@@ -6,22 +6,23 @@ import Header from './Header'
 const Layout = ({ children }) => {
   const location = useLocation()
   
-  // Páginas que não mostram header
-  const hideHeaderPages = ['/child-setup']
-  const showHeader = !hideHeaderPages.includes(location.pathname)
-
+  // Páginas que não mostram header nem navegação inferior
+  const hideAllPages = ['/child-setup', '/login', '/gate']
+  const showHeader = !hideAllPages.includes(location.pathname)
+  const showBottomNav = !hideAllPages.includes(location.pathname)
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
       {/* Header */}
       {showHeader && <Header />}
       
       {/* Main content */}
-      <main className="pb-20">
+      <main className={showBottomNav ? "pb-20" : ""}>
         {children}
       </main>
       
       {/* Bottom Navigation */}
-      <BottomNavigation />
+      {showBottomNav && <BottomNavigation />}
     </div>
   )
 }

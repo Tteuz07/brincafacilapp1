@@ -10,6 +10,11 @@ const ActivitiesPage = () => {
   const navigate = useNavigate()
   const { activities, child, loadActivities } = useAppStore()
   
+  // Garantir que a página sempre começa no topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [])
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedFilters, setSelectedFilters] = useState([])
   const [selectedDuration, setSelectedDuration] = useState('all')
@@ -54,6 +59,16 @@ const ActivitiesPage = () => {
         { id: 'quintal', label: 'No Quintal', emoji: '🌳', description: 'Atividades ao ar livre' },
         { id: 'rapido', label: 'Tempo Limitado', emoji: '⏰', description: 'Até 15 minutos' },
         { id: 'longo', label: 'Mais Tempo', emoji: '🕐', description: 'Mais de 30 minutos' }
+      ]
+    },
+    // Filtros especiais para necessidades específicas
+    { 
+      category: 'Necessidades Especiais',
+      filters: [
+        { id: 'autismo', label: 'Autismo', emoji: '🧩', description: 'Atividades para TEA' },
+        { id: 'sindrome_down', label: 'Síndrome de Down', emoji: '🌟', description: 'Atividades adaptadas' },
+        { id: 'tdah', label: 'TDAH', emoji: '⚡', description: 'Para hiperatividade' },
+        { id: 'deficiencia_motora', label: 'Deficiência Motora', emoji: '♿', description: 'Atividades adaptadas' }
       ]
     }
   ]
@@ -241,7 +256,138 @@ const ActivitiesPage = () => {
       filtered = filtered.filter(activity => {
         const tags = (activity.tags || []).map(t => String(t).toLowerCase())
         const title = (activity.title || '').toLowerCase()
+        // Listas explícitas por filtro (somente estas devem corresponder)
+        const allowLists = {
+          // Situação
+          quintal: [
+            'amarelinha numérica', 'pega peixinhos', 'equilíbrio da fita', 'carrinho foguete a ar'
+          ],
+
+          // Desenvolver Habilidades
+          'coordenação': [
+            'pega peixinhos','torre das vogais','equilíbrio da fita','luva das cores','desafio da corda guia','pinça dos dedões','sequência de cores','construção de torres','pescador de argolas','encaixe das cores','circuito das cores','pebolim de caixa','labirinto dos túneis','conexão das formas','pinball de caixa','alinha cor'
+          ],
+          'memória': [
+            'espelho dos desenhos','sequência de cores','jogo da memória gigante','jogo dos sete erros vivencial'
+          ],
+          'criatividade': [
+            'tangram tradicional','carrinho foguete a ar'
+          ],
+          'socialização': [
+            'pega peixinhos','equilíbrio da fita','amarelinha numérica','jogo do mico tradicional','dança das cadeiras estratégica'
+          ],
+
+          // Perfil da Criança
+          agitado: [
+            'amarelinha numérica','labirinto de fita','dança das cadeiras estratégica','caça ao tesouro lógico','carrinho foguete a ar'
+          ],
+          calmo: [
+            'puzzle dos números','liga letras','luva das cores','pinça dos dedões','encaixe das caixas de ovos','quebra-cabeça de chão','pescador de argolas','encaixe das cores','labirinto dos túneis','alinhamento colorido'
+          ],
+          timido: [
+            'pega peixinhos','espelho dos desenhos','equilíbrio da fita','desafio da corda guia','jogo dos sete erros vivencial','jogo das varetas','pebolim de caixa','caixa-cascata','guerra de discos'
+          ],
+          curioso: [
+            'resgate dos bonecos','caça ao tesouro lógico','quebra-cabeça de chão','código das cores'
+          ],
+
+          // Necessidades Especiais
+          tdah: [
+            'espelho dos desenhos',
+            'torre das vogais',
+            'puzzle dos números',
+            'liga letras',
+            'luva das cores',
+            'desafio da corda guia',
+            'pinça dos dedões',
+            'resgate dos bonecos',
+            'encaixe das caixas de ovos',
+            'torre de hanói caseira',
+            'jogo dos palitos',
+            'tangram tradicional',
+            'código das cores',
+            'encaixe das cores',
+            'sequência de cores',
+            'jogo do mico tradicional',
+            'construção de torres',
+            'labirinto dos túneis',
+            'caixa-cascata',
+            'estrada da soma',
+            'jogo das varetas'
+          ],
+          autismo: [
+            'espelho dos desenhos',
+            'torre das vogais',
+            'puzzle dos números',
+            'liga letras',
+            'luva das cores',
+            'desafio da corda guia',
+            'pinça dos dedões',
+            'resgate dos bonecos',
+            'encaixe das caixas de ovos',
+            'torre de hanói caseira',
+            'caça ao tesouro lógico',
+            'jogo dos palitos',
+            'tangram tradicional',
+            'código das cores',
+            'encaixe das cores',
+            'sequência de cores',
+            'jogo do mico tradicional',
+            'construção de torres',
+            'labirinto dos túneis',
+            'caixa-cascata',
+            'estrada da soma',
+            'jogo das varetas'
+          ],
+          deficiencia_motora: [
+            'puzzle dos números',
+            'liga letras',
+            'luva das cores',
+            'pinça dos dedões',
+            'resgate dos bonecos',
+            'encaixe das caixas de ovos',
+            'código das cores',
+            'encaixe das cores',
+            'jogo do mico tradicional',
+            'construção de torres',
+            'labirinto dos túneis',
+            'caixa-cascata',
+            'jogo das varetas'
+          ],
+          sindrome_down: [
+            'espelho dos desenhos',
+            'torre das vogais',
+            'puzzle dos números',
+            'liga letras',
+            'luva das cores',
+            'desafio da corda guia',
+            'pinça dos dedões',
+            'resgate dos bonecos',
+            'encaixe das caixas de ovos',
+            'torre de hanói caseira',
+            'jogo dos palitos',
+            'código das cores',
+            'encaixe das cores',
+            'sequência de cores',
+            'jogo do mico tradicional',
+            'construção de torres',
+            'caixa-cascata',
+            'estrada da soma'
+          ],
+
+          // Tempo
+          rapido: [
+            'espelho dos desenhos','pescador de argolas','código das cores','encaixe das cores','circuito das cores','pebolim de caixa','labirinto dos túneis','caixa-cascata','carrinho foguete a ar','alinhamento colorido','guerra de discos','conexão das formas','estação das formas','pinball de caixa','alinha cor'
+          ],
+          longo: [
+            'liga letras','desafio da corda guia','encaixe das caixas de ovos','torre de hanói caseira','caça ao tesouro lógico','jogo da memória gigante','labirinto de fita','construção de torres','quebra-cabeça de chão'
+          ]
+        }
+
         const matchesFilter = selectedFilters.some(filter => {
+          if (allowLists[filter]) {
+            return allowLists[filter].includes(title)
+          }
           // Mapeamento dos novos filtros para as categorias existentes
           const filterMapping = {
             // Desenvolver Habilidades
@@ -289,6 +435,31 @@ const ActivitiesPage = () => {
               'curiosidade', 'exploração', 'descoberta', 'investigação', 'aprendizado'
             ],
             
+            // Necessidades Especiais
+            'autismo': [
+              'sensory', 'sensorial', 'routine', 'rotina', 'structure', 'estrutura', 'visual', 'visual',
+              'communication', 'comunicação', 'social', 'socialização', 'calm', 'calmo', 'quiet',
+              'concentration', 'concentração', 'focus', 'foco', 'patience', 'paciência', 'memory',
+              'memória', 'sequential', 'sequencial', 'pattern', 'padrão', 'repetition', 'repetição'
+            ],
+            'sindrome_down': [
+              'motor', 'coordenação', 'coordination', 'physical', 'físico', 'social', 'socialização',
+              'communication', 'comunicação', 'memory', 'memória', 'learning', 'aprendizado',
+              'patience', 'paciência', 'repetition', 'repetição', 'visual', 'visual', 'tactile',
+              'tátil', 'sensory', 'sensorial', 'confidence', 'confiança', 'self-esteem', 'autoestima'
+            ],
+            'tdah': [
+              'energy', 'energia', 'movement', 'movimento', 'physical', 'físico', 'quick', 'rápido',
+              'active', 'ativo', 'competition', 'competição', 'challenge', 'desafio', 'variety',
+              'variedade', 'short', 'curto', 'dynamic', 'dinâmico', 'engaging', 'envolvente'
+            ],
+            'deficiencia_motora': [
+              'adaptable', 'adaptável', 'seated', 'sentado', 'table', 'mesa', 'fine-motor',
+              'coordenação-motora-fina', 'precision', 'precisão', 'patience', 'paciência',
+              'visual', 'visual', 'cognitive', 'cognitivo', 'memory', 'memória', 'concentration',
+              'concentração', 'accessible', 'acessível', 'inclusive', 'inclusivo'
+            ],
+            
             // Situação
             'casa': [
               'indoor', 'casa', 'educational', 'fine-motor', 'indoor', 'quiet',
@@ -318,7 +489,7 @@ const ActivitiesPage = () => {
           }
           
           if (filter === 'rapido') {
-            const quickTitles = ['pinça dos dedões', 'pinça dos dedoes', 'jogo das varetas', 'jogo de varetas']
+            const quickTitles = ['pinça dos dedoes', 'pinça dos dedoes', 'jogo das varetas', 'jogo de varetas']
             if (quickTitles.some(q => title.includes(q))) return true
             return (activity.duration || 0) <= 15
           }
@@ -434,13 +605,19 @@ const ActivitiesPage = () => {
     
     // Filtro por categoria especial (normal)
     if (activeCategory !== 'all') {
-      filtered = filtered.filter(activity => {
-        if (activeCategory === 'normal') {
-          return !activity.video_url
-        }
-        return true
-      })
-      console.log('🏷️ Após filtro de categoria:', filtered.length, 'atividades')
+      const category = specialCategories.find(c => c.id === activeCategory)
+      if (category) {
+        filtered = filtered.filter(activity => {
+          if (activeCategory === 'normal') {
+            return !activity.video_url
+          }
+          if (activeCategory === 'favorites') {
+            return activity.rating >= 4.5
+          }
+          return true
+        })
+        console.log('🏷️ Após filtro de categoria:', filtered.length, 'atividades')
+      }
     }
 
     // Filtro por idade da criança
@@ -782,6 +959,38 @@ const ActivitiesPage = () => {
                       <h4 className="font-bold text-sm mb-1">{filter.label}</h4>
                       <p className={`text-xs ${
                         selectedFilters.includes(filter.id) ? 'text-orange-100' : 'text-gray-500'
+                      }`}>
+                        {filter.description}
+                      </p>
+                      {selectedFilters.includes(filter.id) && (
+                        <div className="absolute top-2 right-2 w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filtros por Necessidades Especiais */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                  <span className="text-2xl mr-3">🌟</span>
+                  Necessidades Especiais
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {objectiveFilters[3].filters.map(filter => (
+                    <button
+                      key={filter.id}
+                      onClick={() => toggleFilter(filter.id)}
+                      className={`relative group p-4 rounded-2xl text-center transition-all duration-300 transform hover:scale-105 ${
+                        selectedFilters.includes(filter.id)
+                          ? 'bg-purple-500 text-white shadow-lg ring-2 ring-purple-300'
+                          : 'bg-gray-50 text-gray-700 hover:bg-purple-50 hover:border-purple-200 border-2 border-transparent'
+                      }`}
+                    >
+                      <span className="text-3xl block mb-2">{filter.emoji}</span>
+                      <h4 className="font-bold text-sm mb-1">{filter.label}</h4>
+                      <p className={`text-xs ${
+                        selectedFilters.includes(filter.id) ? 'text-purple-100' : 'text-gray-500'
                       }`}>
                         {filter.description}
                       </p>

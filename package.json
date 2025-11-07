@@ -13,10 +13,11 @@
     "vercel-build": "vite build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
+    "@supabase/supabase-js": "^2.78.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "jspdf": "^3.0.3",
     "lucide-react": "^0.544.0",
     "node-fetch": "^3.3.2",
     "react": "^19.1.1",

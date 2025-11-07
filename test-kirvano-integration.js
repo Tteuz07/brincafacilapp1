@@ -1,11 +1,17 @@
-// Teste da Integração com a Kirvano
+// Teste da Integração com a Kirvano - Consulta Direta
 // Execute este arquivo para verificar se tudo está funcionando
 
-import { checkPurchaseAccess, getLocalPurchaseAccess, clearLocalPurchaseAccess } from './src/lib/kirvano.js'
+import { checkPurchaseAccess, getLocalPurchaseAccess, clearLocalPurchaseAccess, checkKirvanoConfig } from './src/lib/kirvano.js'
 
 // Função para testar a integração
 async function testKirvanoIntegration() {
-  console.log('🧪 Testando Integração com a Kirvano...\n')
+  console.log('🧪 Testando Integração com a Kirvano - Consulta Direta...\n')
+  
+  // Verificar configuração
+  console.log('🔧 Verificando configuração...')
+  const config = checkKirvanoConfig()
+  console.log('Configuração:', config)
+  console.log(`Modo: ${config.mode}\n`)
   
   // Limpar cache antes dos testes
   clearLocalPurchaseAccess()

@@ -89,65 +89,75 @@ const CartoonsPage = () => {
         />
       </div>
 
-      {/* Desenho em Destaque */}
+      {/* Desenho Recomendado para a Criança */}
       {filteredCartoons.length > 0 && (
         <div 
           onClick={handleFeaturedCartoonClick}
-          className="relative overflow-hidden rounded-2xl p-6 text-white cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+          className="relative overflow-hidden rounded-3xl bg-white cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.12)] border-[3px] border-orange-400"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 opacity-90"></div>
-          <div className="relative z-10">
-            {/* Header do Card */}
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-xl">✨</span>
-              <span className="text-sm font-medium uppercase tracking-wide">
-                Em Destaque
+          {/* Badge de Recomendação */}
+          <div className="bg-gradient-to-r from-orange-400 to-pink-500 px-5 py-3">
+            <div className="flex items-center space-x-2">
+              <Sparkles size={18} className="text-white animate-pulse" />
+              <span className="text-white text-sm font-bold">
+                {child ? `Recomendado para ${child.name}` : 'Recomendado'}
               </span>
             </div>
-            
-            {/* Conteúdo Principal */}
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="w-20 h-20 bg-white/20 rounded-xl flex items-center justify-center text-3xl overflow-hidden flex-shrink-0">
-                {filteredCartoons[0].thumbnail_url || filteredCartoons[0].image ? (
-                  <img 
-                    src={filteredCartoons[0].thumbnail_url || filteredCartoons[0].image} 
-                    alt={filteredCartoons[0].title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  '📺'
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-xl mb-2 line-clamp-2">{filteredCartoons[0].title}</h3>
-                <p className="text-purple-100 text-sm line-clamp-2">
-                  {filteredCartoons[0].description || 'Desenho perfeito para relaxar e se divertir!'}
-                </p>
-              </div>
-            </div>
-            
-            {/* Footer do Card */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4 text-sm">
-                {filteredCartoons[0].duration && (
-                  <div className="flex items-center space-x-1">
-                    <Clock size={16} />
-                    <span>{filteredCartoons[0].duration} min</span>
-                  </div>
-                )}
-                <div className="flex items-center space-x-1">
-                  <span>👶</span>
-                  <span>
-                    {filteredCartoons[0].min_age && filteredCartoons[0].max_age
-                      ? `${filteredCartoons[0].min_age}-${filteredCartoons[0].max_age} anos`
-                      : 'Todas as idades'}
-                  </span>
+          </div>
+
+          {/* Container Principal */}
+          <div className="p-5">
+            <div className="flex items-center space-x-4">
+              {/* Imagem do Desenho */}
+              <div className="relative flex-shrink-0">
+                <div className="w-28 h-28 bg-white rounded-2xl overflow-hidden shadow-md border-2 border-gray-100">
+                  {filteredCartoons[0].thumbnail_url || filteredCartoons[0].image ? (
+                    <img 
+                      src={filteredCartoons[0].thumbnail_url || filteredCartoons[0].image} 
+                      alt={filteredCartoons[0].title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-orange-50 to-pink-50">
+                      📺
+                    </div>
+                  )}
                 </div>
               </div>
-              
+
+              {/* Informações do Desenho */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-xl text-gray-900 mb-1.5 line-clamp-1">
+                  {filteredCartoons[0].title}
+                </h3>
+                <p className="text-gray-600 text-xs mb-3 line-clamp-2 leading-relaxed">
+                  {filteredCartoons[0].description || 'Aventuras incríveis e educativas!'}
+                </p>
+                
+                {/* Metadados */}
+                <div className="flex items-center space-x-3">
+                  {filteredCartoons[0].duration && (
+                    <div className="flex items-center space-x-1.5 bg-blue-50 px-2.5 py-1.5 rounded-lg">
+                      <Clock size={14} className="text-blue-600" />
+                      <span className="text-xs font-semibold text-blue-700">{filteredCartoons[0].duration} min</span>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-1.5 bg-orange-50 px-2.5 py-1.5 rounded-lg">
+                    <span className="text-sm">👶</span>
+                    <span className="text-xs font-semibold text-orange-700">
+                      {filteredCartoons[0].min_age && filteredCartoons[0].max_age
+                        ? `${filteredCartoons[0].min_age}-${filteredCartoons[0].max_age} anos`
+                        : 'Todas'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Botão Play */}
-              <div className="bg-white text-purple-500 p-3 rounded-xl hover:bg-purple-50 transition-colors">
-                <Play size={20} />
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200">
+                  <Play size={22} className="text-white fill-white ml-0.5" />
+                </div>
               </div>
             </div>
           </div>

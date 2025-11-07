@@ -1,15 +1,18 @@
-import React, { useEffect } from 'react'
+
+import React, { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import useAppStore from './store/useAppStore'
-import { supabase } from './lib/supabase'
 
 // Components
 import Layout from './components/Layout/Layout'
 import LoadingScreen from './components/LoadingScreen/LoadingScreen'
+import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop/ScrollToTop'
 
 // Pages
 import LoginPage from './pages/LoginPage/LoginPage'
+import Gate from './pages/Gate'
 import HomePage from './pages/HomePage/HomePage'
 import ActivitiesPage from './pages/ActivitiesPage/ActivitiesPage'
 import ActivityDetailPage from './pages/ActivityDetailPage/ActivityDetailPage'
@@ -20,161 +23,181 @@ import SettingsPage from './pages/SettingsPage/SettingsPage'
 import ChildSetupPage from './pages/ChildSetupPage/ChildSetupPage'
 import FavoritesPage from './pages/FavoritesPage/FavoritesPage'
 import SupportPage from './pages/SupportPage/SupportPage'
-import TestImage from './components/TestImage'
+import StoriesPage from './pages/StoriesPage/StoriesPage'
+import DrawingsPage from './pages/DrawingsPage/DrawingsPage'
+import WorkshopPage from './pages/WorkshopPage/WorkshopPage'
 
 function App() {
   const { 
     user, 
-    isAuthenticated, 
-    isLoading, 
     child,
     setUser, 
-    setLoading, 
+    setChild, 
     initializeApp 
   } = useAppStore()
 
-  // DEBUG: Log do estado da aplicação
-  console.log('🔍 APP STATE:', {
-    user: !!user,
-    isAuthenticated,
-    isLoading,
-    child: !!child,
-    hasSupabase: !!supabase,
-    userEmail: user?.email,
-    childName: child?.name
-  })
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Verificar se há usuário salvo no localStorage
-    const checkStoredUser = async () => {
+    const checkSession = async () => {
       try {
-        // Sempre iniciar deslogado no deploy
-        const storedUser = localStorage.getItem('brincafacil-user')
-        const storedChild = localStorage.getItem('brincafacil-child')
+        console.log('🔍 VERIFICANDO SESSÃO SALVA...')
         
-        if (storedUser && storedChild) {
-          const user = JSON.parse(storedUser)
-          const child = JSON.parse(storedChild)
-          
-          console.log('👤 USUÁRIO ENCONTRADO NO LOCALSTORAGE:', user)
-          setUser(user)
-          setChild(child)
-          await initializeApp()
+        // Verificar se há sessão do Supabase primeiro
+        const { supabase } = await import('./lib/supabaseClient')
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        // ❌ NÃO CARREGAR CHILD DO LOCALSTORAGE - dados vêm apenas do Supabase
+        // O child será carregado automaticamente pelo loadChild() que busca do Supabase
+        
+        console.log('📊 VERIFICANDO SESSÃO:', {
+          hasSupabaseSession: !!session,
+          userEmail: session?.user?.email
+        })
+        
+        // ✅ CRÍTICO: Se tiver sessão Supabase, carregar usuário no store
+        if (session?.user) {
+          console.log('✅ Sessão Supabase encontrada, carregando usuário no store...')
+          setUser(session.user)
+          console.log('✅ Usuário carregado no store:', session.user.email)
         } else {
-          console.log('🔐 NENHUM USUÁRIO SALVO - INICIANDO DESLOGADO')
+          console.log('⚠️ Nenhuma sessão encontrada, usuário não autenticado')
           setUser(null)
         }
+        
+        // Inicializar app sempre (vai carregar child do Zustand persist ou localStorage)
+        await initializeApp()
+        
+        // Após inicializar, verificar se child foi carregado corretamente
+        // Aguardar um pouco para garantir que o Zustand persist foi carregado
+        await new Promise(r => setTimeout(r, 100))
+        
+        const storeState = useAppStore.getState()
+        if (storeState.child && storeState.child.name) {
+          console.log('✅ CHILD CARREGADO DO STORE:', storeState.child.name)
+          // ❌ NÃO SINCRONIZAR COM LOCALSTORAGE - dados ficam apenas no Supabase
+        }
       } catch (error) {
-        console.error('Erro ao verificar usuário salvo:', error)
-        setUser(null)
+        console.error('❌ ERRO AO VERIFICAR SESSÃO:', error)
       } finally {
-        setLoading(false)
+        setIsLoading(false)
+        console.log('✅ VERIFICAÇÃO DE SESSÃO CONCLUÍDA')
       }
     }
 
-    checkStoredUser()
-
-    // Listener para mudanças de autenticação via localStorage
-    const handleAuthChange = async (event) => {
-      console.log('🔐 HANDLE AUTH CHANGE:', event.detail)
+    // Escutar evento de mudança de autenticação
+    const handleAuthChange = (event) => {
+      console.log('🔔 EVENTO DE AUTENTICAÇÃO RECEBIDO:', event.detail)
       const { user, child } = event.detail
       
-      if (user && child) {
-        console.log('👤 USUÁRIO LOGADO VIA EVENT:', user)
+      if (user) {
+        console.log('👤 USUÁRIO DO EVENTO:', user)
         setUser(user)
-        setChild(child)
-        await initializeApp()
-      } else {
-        console.log('👤 USUÁRIO DESLOGADO VIA EVENT')
-        setUser(null)
-        setChild(null)
-        // Limpar localStorage
-        localStorage.removeItem('brincafacil-user')
-        localStorage.removeItem('brincafacil-child')
       }
-      setLoading(false)
+      if (child) {
+        console.log('👶 CRIANÇA DO EVENTO:', child)
+        setChild(child)
+      }
+      if (user) {
+        initializeApp()
+      }
     }
 
+    // Adicionar listener para o evento
     window.addEventListener('brincafacil-auth-change', handleAuthChange)
 
+    checkSession()
+
+    // Cleanup
     return () => {
       window.removeEventListener('brincafacil-auth-change', handleAuthChange)
     }
-  }, [setUser, setLoading, initializeApp])
+  }, [setUser, setChild, initializeApp])
 
   if (isLoading) {
-    console.log('⏳ MOSTRANDO LOADING SCREEN')
     return <LoadingScreen />
   }
 
-  return (
-    <Router>
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
-        <Toaster 
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              borderRadius: '12px',
-              padding: '16px',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-            }
-          }}
-        />
-        
-        <Routes>
-          {/* Rota de login */}
-          <Route 
-            path="/login" 
-            element={
-              isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
-            } 
+  try {
+    return (
+      <Router>
+        <ScrollToTop />
+        <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-50">
+          <Toaster 
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+            }}
           />
           
-          {/* Rota de configuração inicial da criança */}
-          <Route 
-            path="/child-setup" 
-            element={
-              !isAuthenticated ? <Navigate to="/login" replace /> :
-              child ? <Navigate to="/" replace /> : <ChildSetupPage />
-            } 
-          />
-          
-          {/* Rotas protegidas */}
-          <Route 
-            path="/*" 
-            element={
-              !isAuthenticated ? (
-                console.log('❌ USUÁRIO NÃO AUTENTICADO - REDIRECIONANDO PARA LOGIN'),
-                <Navigate to="/login" replace />
-              ) : !child ? (
-                console.log('👶 CRIANÇA NÃO CONFIGURADA - REDIRECIONANDO PARA SETUP'),
-                <Navigate to="/child-setup" replace />
-              ) : (
-                console.log('✅ USUÁRIO AUTENTICADO E CRIANÇA CONFIGURADA - MOSTRANDO LAYOUT'),
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/activities" element={<ActivitiesPage />} />
-                    <Route path="/activities/:id" element={<ActivityDetailPage />} />
-                    <Route path="/cartoons" element={<CartoonsPage />} />
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    <Route path="/favorites" element={<FavoritesPage />} />
-                    <Route path="/support" element={<SupportPage />} />
-                    <Route path="/test-image" element={<TestImage />} />
-                  </Routes>
-                </Layout>
-              )
-            } 
-          />
-        </Routes>
+          <Routes>
+            {/* Rota de login */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Rota /gate - verificação de licença (DEVE VIR ANTES DO CATCH-ALL) */}
+            <Route path="/gate" element={<Gate />} />
+            
+            {/* Rota de configuração inicial da criança (onboarding/quiz) */}
+            <Route path="/child-setup" element={<ChildSetupPage />} />
+            
+            {/* Rotas protegidas do app - todas precisam de licença paga */}
+            <Route 
+              path="/*" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/app" element={<HomePage />} />
+                      <Route path="/activities" element={<ActivitiesPage />} />
+                      <Route path="/activities/:id" element={<ActivityDetailPage />} />
+                      <Route path="/cartoons" element={<CartoonsPage />} />
+                      <Route path="/shop" element={<ShopPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/favorites" element={<FavoritesPage />} />
+                      <Route path="/support" element={<SupportPage />} />
+                      <Route path="/stories" element={<StoriesPage />} />
+                      <Route path="/drawings" element={<DrawingsPage />} />
+                      <Route path="/workshop" element={<WorkshopPage />} />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Fallback: se nenhuma rota corresponder, vai para login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    )
+  } catch (error) {
+    console.error('❌ ERRO NO APP:', error)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border-0">
+          <div className="text-center">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Erro ao carregar</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              {error.message || 'Ocorreu um erro ao carregar a aplicação.'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-4 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Recarregar Página
+            </button>
+          </div>
+        </div>
       </div>
-    </Router>
-  )
+    )
+  }
 }
 
 export default App

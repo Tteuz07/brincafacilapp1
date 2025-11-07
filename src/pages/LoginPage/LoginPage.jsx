@@ -100,26 +100,171 @@ const LoginPage = () => {
       }
 
       if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ 
-          email: email.toLowerCase(), 
-          password 
+        // ✅ LIMPAR EMAIL: Remover espaços e normalizar
+        const emailClean = email.trim().toLowerCase();
+        console.log('[LOGIN] Tentando cadastrar:', {
+          emailOriginal: email,
+          emailLimpo: emailClean,
+          emailLength: emailClean.length
         });
-        if (error) {
-          const translatedError = translateError(error.message);
-          throw new Error(translatedError);
+        
+        // Validação básica de email
+        if (!emailClean.includes('@') || !emailClean.includes('.')) {
+          throw new Error('E-mail inválido. Verifique se digitou corretamente.');
         }
+        
+        // ✅ FLUXO CORRETO: Verificar licença PRIMEIRO, depois cadastrar
+        console.log('[LOGIN] Verificando se email está autorizado na tabela licencas...');
+        const emailLower = emailClean;
+        
+        try {
+          // Verificar se o email está na tabela licencas com status 'pago'
+          const { data: licencaData, error: licencaError } = await supabase
+            .rpc('verificar_licenca', { 
+              user_email: emailLower 
+            });
+          
+          console.log('[LOGIN] Resultado verificar_licenca:', {
+            hasData: !!licencaData,
+            dataLength: licencaData?.length,
+            hasError: !!licencaError,
+            errorMessage: licencaError?.message
+          });
+          
+          if (licencaError) {
+            console.error('[LOGIN] Erro ao verificar licença:', licencaError);
+            throw new Error('Erro ao verificar autorização. Tente novamente.');
+          }
+          
+          // Verificar se a licença é válida
+          const licenca = licencaData?.[0];
+          if (!licenca || licenca.valido !== true) {
+            console.log('[LOGIN] Email não autorizado ou licença não paga:', licenca);
+            throw new Error('Este e-mail não está autorizado. Verifique se você completou a compra e aguarde até 30 minutos para liberação automática.');
+          }
+          
+          console.log('✅ Email autorizado! Prosseguindo com cadastro...');
+        } catch (licencaErr) {
+          // Se for erro de autorização, mostrar mensagem e parar
+          if (licencaErr.message?.includes('não está autorizado') || 
+              licencaErr.message?.includes('não paga')) {
+            throw licencaErr;
+          }
+          // Outros erros também param
+          throw licencaErr;
+        }
+        
+        // Se chegou aqui, o email está autorizado - tentar cadastrar
+        console.log('[LOGIN] Email autorizado, tentando cadastrar no Supabase Auth...');
+        console.log('[LOGIN] Dados do cadastro:', {
+          email: emailLower,
+          emailLength: emailLower.length,
+          passwordLength: password.length,
+          hasPassword: !!password
+        });
+        
+        const { data, error } = await supabase.auth.signUp({ 
+          email: emailLower.trim(), // Garantir que não tem espaços
+          password: password.trim() // Garantir que não tem espaços
+        });
+        
+        console.log('[LOGIN] Resposta do signUp:', { 
+          hasData: !!data, 
+          hasError: !!error,
+          errorCode: error?.code,
+          errorMessage: error?.message,
+          userId: data?.user?.id,
+          userEmail: data?.user?.email
+        });
+        
+        if (error) {
+          console.error('[LOGIN] Erro no cadastro:', error);
+          
+          // Se o erro for que o usuário já existe, tentar fazer login automaticamente
+          if (error.message?.toLowerCase().includes('already registered') || 
+              error.message?.toLowerCase().includes('user already registered') ||
+              error.code === 'signup_disabled' ||
+              error.message?.toLowerCase().includes('email already') ||
+              error.status === 422) {
+            console.log('[LOGIN] Usuário já existe no Supabase Auth, tentando fazer login...');
+            
+            // Tentar fazer login automaticamente
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email: emailLower,
+              password
+            });
+            
+            if (loginError) {
+              // Se o login também falhar, mostrar mensagem clara
+              console.error('[LOGIN] Login também falhou:', loginError);
+              
+              if (loginError.message?.toLowerCase().includes('invalid') || 
+                  loginError.message?.toLowerCase().includes('credentials')) {
+                throw new Error('Este e-mail já está cadastrado, mas a senha está incorreta. Use a aba "Entrar" e digite a senha correta.');
+              }
+              
+              throw new Error('Este e-mail já está cadastrado. Use a aba "Entrar" e digite sua senha.');
+            } else {
+              // Login funcionou!
+              console.log('✅ Login automático realizado:', loginData);
+              toast.success('Login realizado com sucesso!');
+              await new Promise(r => setTimeout(r, 500));
+              window.location.replace('/gate');
+              return;
+            }
+          }
+          
+          const translatedError = translateError(error.message);
+          throw new Error(translatedError || 'Erro ao cadastrar. Tente novamente.');
+        }
+        
         console.log('✅ Cadastro realizado:', data);
-        toast.success('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        
+        // Verificar se o usuário foi criado (pode não ter email confirmado)
+        if (data?.user) {
+          console.log('✅ Usuário criado no Supabase Auth:', data.user.id);
+          toast.success('Cadastro realizado! Redirecionando...');
+        } else {
+          console.warn('⚠️ Usuário criado mas sem confirmação de email');
+          toast.success('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        }
+        
         // Pequeno delay para o toast aparecer antes de redirecionar
         await new Promise(r => setTimeout(r, 500));
       } else {
+        // Modo LOGIN
+        console.log('[LOGIN] Tentando fazer login:', email.toLowerCase());
         const { data, error } = await supabase.auth.signInWithPassword({ 
           email: email.toLowerCase(), 
           password 
         });
+        
+        console.log('[LOGIN] Resposta do signIn:', { 
+          hasData: !!data, 
+          hasError: !!error,
+          errorCode: error?.code,
+          errorMessage: error?.message,
+          errorStatus: error?.status,
+          userId: data?.user?.id
+        });
+        
         if (error) {
+          console.error('[LOGIN] Erro no login:', error);
+          
+          // Tratamento específico para erro 400 (Bad Request)
+          if (error.status === 400) {
+            if (error.message?.toLowerCase().includes('invalid') || 
+                error.message?.toLowerCase().includes('credentials')) {
+              throw new Error('Email ou senha incorretos. Verifique suas credenciais.');
+            } else if (error.message?.toLowerCase().includes('email not confirmed')) {
+              throw new Error('Email não confirmado. Verifique sua caixa de entrada.');
+            } else {
+              throw new Error('Erro ao fazer login. Verifique se o email está cadastrado.');
+            }
+          }
+          
           const translatedError = translateError(error.message);
-          throw new Error(translatedError);
+          throw new Error(translatedError || 'Erro ao fazer login. Tente novamente.');
         }
         console.log('✅ Login realizado:', data);
         toast.success('Login realizado com sucesso!');

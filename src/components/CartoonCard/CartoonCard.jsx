@@ -3,7 +3,7 @@ import { Heart, Star, Clock, Play } from 'lucide-react'
 import useAppStore from '../../store/useAppStore'
 import CartoonModal from '../CartoonModal/CartoonModal'
 
-const CartoonCard = ({ cartoon, compact = false, onClick }) => {
+const CartoonCard = ({ cartoon, compact = false, onClick, hideFavoriteButton = false }) => {
   const { addToFavorites, removeFromFavorites, isFavorite } = useAppStore()
   const favorites = useAppStore(state => state.favorites)
   const setFavorites = useAppStore(state => state.setFavorites)
@@ -16,18 +16,14 @@ const CartoonCard = ({ cartoon, compact = false, onClick }) => {
     e.stopPropagation()
     
     if (isCartoonFavorited) {
-      const updated = favorites.filter(fav => !(fav.type === 'cartoon' && fav.cartoon_id === cartoon.id))
-      setFavorites(updated)
       const res = await removeFromFavorites('cartoon', cartoon.id)
       if (res?.error) {
-        useAppStore.getState().loadFavorites()
+        console.error('Erro ao remover favorito:', res.error)
       }
     } else {
-      const optimisticFav = { type: 'cartoon', cartoon_id: cartoon.id }
-      setFavorites([optimisticFav, ...favorites])
       const { error } = await addToFavorites('cartoon', cartoon.id)
       if (error) {
-        useAppStore.getState().loadFavorites()
+        console.error('Erro ao adicionar favorito:', error)
       }
     }
   }
@@ -54,7 +50,15 @@ const CartoonCard = ({ cartoon, compact = false, onClick }) => {
   if (compact) {
     return (
       <div 
-        onClick={handleCardClick}
+        onClick={(e) => {
+          // Se o clique foi no botão de favorito, não abrir modal
+          if (e.target.closest('button')?.classList.contains('absolute') ||
+              e.target.closest('button')?.getAttribute('onClick')?.includes('handleFavoriteToggle')) {
+            e.stopPropagation()
+            return
+          }
+          handleCardClick()
+        }}
         className="group cursor-pointer"
       >
         <div className="relative rounded-xl overflow-hidden bg-white shadow-md hover:shadow-lg transition-all duration-200 transform group-hover:scale-105">
@@ -78,15 +82,20 @@ const CartoonCard = ({ cartoon, compact = false, onClick }) => {
             </div>
 
             {/* Botão de favorito */}
-            <button
-              onClick={handleFavoriteToggle}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-            >
-              <Heart 
-                size={14} 
-                className={isCartoonFavorited ? 'text-red-500 fill-red-500' : 'text-gray-400'} 
-              />
-            </button>
+            {!hideFavoriteButton && (
+              <button
+                onClick={handleFavoriteToggle}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+                style={{ pointerEvents: 'auto' }}
+              >
+                <Heart 
+                  size={14} 
+                  className={isCartoonFavorited ? 'text-red-500 fill-red-500' : 'text-gray-400'} 
+                />
+              </button>
+            )}
           </div>
 
           {/* Info */}
@@ -119,20 +128,33 @@ const CartoonCard = ({ cartoon, compact = false, onClick }) => {
 
   return (
     <div 
-      onClick={handleCardClick}
+      onClick={(e) => {
+        // Se o clique foi no botão de favorito, não abrir modal
+        if (e.target.closest('button')?.classList.contains('absolute') ||
+            e.target.closest('button')?.getAttribute('onClick')?.includes('handleFavoriteToggle')) {
+          e.stopPropagation()
+          return
+        }
+        handleCardClick()
+      }}
       className="group cursor-pointer"
     >
       <div className="card hover:shadow-xl transition-all duration-200 transform group-hover:scale-105 relative overflow-hidden">
         {/* Botão de favorito */}
-        <button
-          onClick={handleFavoriteToggle}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-        >
-          <Heart 
-            size={20} 
-            className={isCartoonFavorited ? 'text-red-500 fill-red-500' : 'text-gray-400'} 
-          />
-        </button>
+        {!hideFavoriteButton && (
+          <button
+            onClick={handleFavoriteToggle}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+            style={{ pointerEvents: 'auto' }}
+          >
+            <Heart 
+              size={20} 
+              className={isCartoonFavorited ? 'text-red-500 fill-red-500' : 'text-gray-400'} 
+            />
+          </button>
+        )}
 
         {/* Thumbnail */}
         <div className="relative h-40 bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center rounded-xl mb-4 overflow-hidden">

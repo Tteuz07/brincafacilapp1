@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react'
-import { X, Camera, Star, Send, Smile, Meh, Frown } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { X, Camera, Star, Send, Smile, Meh, Frown, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export const ActivityRegistrationModal = ({ 
@@ -21,6 +21,37 @@ export const ActivityRegistrationModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef(null)
   const [photoPreview, setPhotoPreview] = useState(null)
+  const [showDurationDropdown, setShowDurationDropdown] = useState(false)
+  const durationDropdownRef = useRef(null)
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (durationDropdownRef.current && !durationDropdownRef.current.contains(event.target)) {
+        setShowDurationDropdown(false)
+      }
+    }
+
+    if (showDurationDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDurationDropdown])
+
+  const durationOptions = [
+    { value: 5, label: '5 minutos' },
+    { value: 10, label: '10 minutos' },
+    { value: 15, label: '15 minutos' },
+    { value: 20, label: '20 minutos' },
+    { value: 30, label: '30 minutos' },
+    { value: 45, label: '45 minutos' },
+    { value: 60, label: '1 hora ou mais' }
+  ]
+
+  const selectedDuration = durationOptions.find(opt => opt.value === formData.duration)?.label || '15 minutos'
 
   if (!isOpen) return null
 
@@ -110,10 +141,17 @@ export const ActivityRegistrationModal = ({
 
   const simulatePhotoUpload = (file) => {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        // Em produção, aqui seria o upload real para um servidor
+      // Converter a imagem para base64 para salvar no localStorage
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        // Salvar como data URL (base64) para persistir no localStorage
+        resolve(e.target.result)
+      }
+      reader.onerror = () => {
+        // Fallback para blob URL se der erro
         resolve(URL.createObjectURL(file))
-      }, 1000)
+      }
+      reader.readAsDataURL(file)
     })
   }
 
@@ -165,7 +203,7 @@ export const ActivityRegistrationModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" style={{paddingTop: '2rem', paddingBottom: '2rem'}}>
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl" style={{maxHeight: '85vh'}}>
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl relative" style={{maxHeight: '85vh'}}>
         <div className="overflow-y-auto" style={{maxHeight: '85vh'}}>
           {/* Header */}
           <div className={`bg-gradient-to-r ${getAreaColor(area)} p-4 rounded-t-2xl text-white`}>
@@ -296,24 +334,42 @@ export const ActivityRegistrationModal = ({
             </div>
           </div>
 
-          {/* Duração */}
-          <div>
+          {/* Duração - Dropdown Customizado */}
+          <div className="relative" ref={durationDropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               ⏱️ Quanto tempo brincou?
             </label>
-            <select
-              value={formData.duration}
-              onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+            <button
+              type="button"
+              onClick={() => setShowDurationDropdown(!showDurationDropdown)}
+              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none bg-white cursor-pointer flex items-center justify-between text-left"
             >
-              <option value={5}>5 minutos</option>
-              <option value={10}>10 minutos</option>
-              <option value={15}>15 minutos</option>
-              <option value={20}>20 minutos</option>
-              <option value={30}>30 minutos</option>
-              <option value={45}>45 minutos</option>
-              <option value={60}>1 hora ou mais</option>
-            </select>
+              <span>{selectedDuration}</span>
+              <ChevronDown 
+                size={20} 
+                className={`text-gray-400 transition-transform ${showDurationDropdown ? 'rotate-180' : ''}`}
+              />
+            </button>
+            
+            {showDurationDropdown && (
+              <div className="absolute z-[10000] w-full mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {durationOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, duration: option.value }))
+                      setShowDurationDropdown(false)
+                    }}
+                    className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors ${
+                      formData.duration === option.value ? 'bg-blue-100 font-medium' : ''
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Dificuldade */}

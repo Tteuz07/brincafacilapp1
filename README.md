@@ -370,6 +370,21 @@ Este projeto está sob a licença MIT. Veja o arquivo \`LICENSE\` para mais deta
 
 Feito com ❤️ para famílias brasileiras
 
+## SQL necessário no Supabase
+
+create table if not exists public.licencas (
+  email text primary key,
+  status text not null default 'pendente', -- 'pago' | 'pendente' | 'estornado'
+  origem text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.licencas enable row level security;
+
+create policy "select_own_licenca"
+on public.licencas for select
+using (auth.email() = email);
+
 
 
 

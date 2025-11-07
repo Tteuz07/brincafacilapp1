@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Heart, Filter, Search, Trash2, Play } from 'lucide-react'
+import { Heart, Filter, Search, Trash2, Play, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import useAppStore from '../../store/useAppStore'
 import ActivityCard from '../../components/ActivityCard/ActivityCard'
 import CartoonCard from '../../components/CartoonCard/CartoonCard'
 import toast from 'react-hot-toast'
 
 const FavoritesPage = () => {
-  const { favorites, loadFavorites, removeFromFavorites, activities, cartoons, setFavorites } = useAppStore()
+  const navigate = useNavigate()
+  const { favorites, loadFavorites, removeFromFavorites, activities, cartoons, setFavorites, loadActivities, loadCartoons } = useAppStore()
   
   const [activeTab, setActiveTab] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredFavorites, setFilteredFavorites] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const tabs = [
     { id: 'all', label: 'Todos', icon: Heart },
@@ -19,15 +22,97 @@ const FavoritesPage = () => {
   ]
 
   useEffect(() => {
-    loadFavorites()
-  }, [loadFavorites])
+    // Carregar dados quando a página carregar
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
+        console.log('🔄 FavoritesPage: Carregando dados...')
+        
+        // Garantir que activities e cartoons estão carregados
+        if (activities.length === 0) {
+          console.log('📋 Carregando atividades...')
+          await loadActivities()
+        }
+        if (cartoons.length === 0) {
+          console.log('📺 Carregando desenhos...')
+          await loadCartoons()
+        }
+        
+        // Carregar favoritos
+        console.log('⭐ Carregando favoritos...')
+        const result = await loadFavorites()
+        console.log('✅ FavoritesPage: Dados carregados:', {
+          favorites: result?.data?.length || 0,
+          activities: activities.length,
+          cartoons: cartoons.length
+        })
+      } catch (error) {
+        console.error('❌ FavoritesPage: Erro ao carregar dados:', error)
+        toast.error('Erro ao carregar favoritos')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+  
+  // Recarregar quando activities/cartoons mudarem (para garantir que os itens existem)
+  useEffect(() => {
+    if (activities.length > 0 || cartoons.length > 0) {
+      filterFavorites()
+    }
+  }, [activities.length, cartoons.length])
 
   useEffect(() => {
+    console.log('🔄 FavoritesPage: Filtrando favoritos...', {
+      favoritesCount: favorites.length,
+      activeTab,
+      searchTerm
+    })
     filterFavorites()
-  }, [favorites, activeTab, searchTerm])
+  }, [favorites, activeTab, searchTerm, activities, cartoons])
 
   const filterFavorites = () => {
+    console.log('🔍 FavoritesPage: Filtrando favoritos...', {
+      totalFavorites: favorites.length,
+      activitiesCount: activities.length,
+      cartoonsCount: cartoons.length
+    })
+    
     let filtered = [...favorites]
+
+    // Primeiro, garantir que os favoritos têm os itens correspondentes
+    filtered = filtered.filter(fav => {
+      let item = null
+      if (fav.type === 'activity') {
+        // Tentar múltiplas formas de comparação de ID
+        item = activities.find(a => {
+          const favId = String(fav.itemId)
+          const actId = String(a.id)
+          return favId === actId || parseInt(favId) === a.id || favId === String(a.id)
+        })
+      } else if (fav.type === 'cartoon') {
+        // Tentar múltiplas formas de comparação de ID
+        item = cartoons.find(c => {
+          const favId = String(fav.itemId)
+          const cartId = String(c.id)
+          return favId === cartId || parseInt(favId) === c.id || favId === String(c.id)
+        })
+      }
+      
+      if (!item) {
+        console.warn('⚠️ Item não encontrado para favorito:', {
+          type: fav.type,
+          itemId: fav.itemId,
+          itemIdType: typeof fav.itemId,
+          availableIds: fav.type === 'activity' 
+            ? activities.map(a => ({ id: a.id, idType: typeof a.id }))
+            : cartoons.map(c => ({ id: c.id, idType: typeof c.id }))
+        })
+      }
+      
+      return !!item // Manter apenas favoritos que têm item correspondente
+    })
 
     // Filtro por tipo
     if (activeTab !== 'all') {
@@ -37,7 +122,21 @@ const FavoritesPage = () => {
     // Filtro por busca
     if (searchTerm) {
       filtered = filtered.filter(fav => {
-        const item = fav.activities || fav.cartoons
+        let item = null
+        if (fav.type === 'activity') {
+          item = activities.find(a => {
+            const favId = String(fav.itemId)
+            const actId = String(a.id)
+            return favId === actId || parseInt(favId) === a.id
+          })
+        } else if (fav.type === 'cartoon') {
+          item = cartoons.find(c => {
+            const favId = String(fav.itemId)
+            const cartId = String(c.id)
+            return favId === cartId || parseInt(favId) === c.id
+          })
+        }
+        
         if (item) {
           return item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                  item.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -47,27 +146,22 @@ const FavoritesPage = () => {
     }
 
     // Ordenar por data de adição (mais recentes primeiro)
-    filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    filtered.sort((a, b) => {
+      const dateA = a.addedAt || a.created_at || 0
+      const dateB = b.addedAt || b.created_at || 0
+      return new Date(dateB) - new Date(dateA)
+    })
 
+    console.log('✅ FavoritesPage: Favoritos filtrados:', filtered.length)
     setFilteredFavorites(filtered)
   }
 
   const handleRemoveFavorite = async (type, itemId) => {
-    // Atualização otimista: remove imediatamente da tela e do store
-    const key = type === 'activity' ? 'activity_id' : 'cartoon_id'
-    const prevFavorites = [...favorites]
-    const optimisticallyFiltered = prevFavorites.filter(f => !(f.type === type && (f[key] === itemId)))
-    setFavorites(optimisticallyFiltered)
-    setFilteredFavorites(prev => prev.filter(f => !(f.type === type && ((f.activity_id || f.cartoon_id) === itemId))))
-
     try {
       const { error } = await removeFromFavorites(type, itemId)
       if (error) throw error
       toast.success('Removido dos favoritos')
     } catch (error) {
-      // Reverter em caso de falha
-      await loadFavorites()
-      setFilteredFavorites(prev => prev)
       toast.error('Erro ao remover favorito')
     }
   }
@@ -84,17 +178,14 @@ const FavoritesPage = () => {
   const EmptyState = ({ type }) => {
     const messages = {
       all: {
-        icon: '💝',
         title: 'Nenhum favorito ainda',
         description: 'Explore brincadeiras e desenhos para adicionar aos seus favoritos!'
       },
       activity: {
-        icon: '🎯',
         title: 'Nenhuma brincadeira favoritada',
         description: 'Encontre atividades incríveis e salve as que mais gosta!'
       },
       cartoon: {
-        icon: '📺',
         title: 'Nenhum desenho favoritado',
         description: 'Descubra desenhos educativos e divertidos para sua criança!'
       }
@@ -103,23 +194,22 @@ const FavoritesPage = () => {
     const message = messages[type] || messages.all
 
     return (
-      <div className="text-center py-12 text-gray-500">
-        <div className="text-6xl mb-4">{message.icon}</div>
-        <h3 className="text-lg font-medium mb-2">{message.title}</h3>
-        <p className="text-sm mb-6">{message.description}</p>
-        <div className="space-y-2">
+      <div className="card text-center py-8">
+        <h3 className="text-lg font-medium text-gray-800 mb-2">{message.title}</h3>
+        <p className="text-sm text-gray-600 mb-6">{message.description}</p>
+        <div className="flex flex-col gap-2">
           {type !== 'cartoon' && (
             <button
-              onClick={() => window.location.href = '/activities'}
-              className="btn-primary mx-2"
+              onClick={() => navigate('/activities')}
+              className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Explorar Brincadeiras
             </button>
           )}
           {type !== 'activity' && (
             <button
-              onClick={() => window.location.href = '/cartoons'}
-              className="btn-secondary mx-2"
+              onClick={() => navigate('/cartoons')}
+              className="w-full bg-white border-2 border-primary-500 text-primary-500 font-bold py-3 px-6 rounded-xl transition-all duration-200 hover:bg-primary-50"
             >
               Ver Desenhos
             </button>
@@ -129,17 +219,35 @@ const FavoritesPage = () => {
     )
   }
 
+  if (isLoading) {
+    return (
+      <div className="container-app py-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando favoritos...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container-app py-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center space-x-2">
-          <Heart className="text-red-500 fill-red-500" size={28} />
-          <span>Meus Favoritos</span>
-        </h1>
-        <p className="text-gray-600 text-sm">
-          {stats.total} {stats.total === 1 ? 'item salvo' : 'itens salvos'}
-        </p>
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-3 rounded-full bg-white shadow-lg hover:shadow-xl transition-all"
+        >
+          <ArrowLeft size={20} className="text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Meus Favoritos ❤️
+          </h1>
+          <p className="text-gray-600 text-sm">
+            {stats.total} {stats.total === 1 ? 'item salvo' : 'itens salvos'}
+          </p>
+        </div>
       </div>
 
       {/* Estatísticas */}
@@ -203,26 +311,27 @@ const FavoritesPage = () => {
       {filteredFavorites.length > 0 ? (
         <div className="space-y-4">
           {filteredFavorites.map(favorite => {
-            let item = favorite.activities || favorite.cartoons
-            // Fallback: quando não veio expandido do backend, achar pelo id localmente
-            if (!item) {
-              if (favorite.type === 'activity') {
-                item = activities.find(a => a.id === (favorite.activity_id || favorite.activities?.id))
-              } else if (favorite.type === 'cartoon') {
-                item = cartoons.find(c => c.id === (favorite.cartoon_id || favorite.cartoons?.id))
-              }
+            let item = null
+            if (favorite.type === 'activity') {
+              // Converter itemId para número se necessário (Supabase retorna string)
+              const itemId = typeof favorite.itemId === 'string' ? parseInt(favorite.itemId) : favorite.itemId
+              item = activities.find(a => a.id === itemId || a.id === favorite.itemId || String(a.id) === String(favorite.itemId))
+            } else if (favorite.type === 'cartoon') {
+              // Converter itemId para número se necessário (Supabase retorna string)
+              const itemId = typeof favorite.itemId === 'string' ? parseInt(favorite.itemId) : favorite.itemId
+              item = cartoons.find(c => c.id === itemId || c.id === favorite.itemId || String(c.id) === String(favorite.itemId))
             }
             
-            if (!item) return null
+            if (!item) {
+              console.warn('Item não encontrado para favorito:', favorite)
+              return null
+            }
 
             return (
-              <div key={`${favorite.type}-${favorite.activity_id || favorite.cartoon_id}`} className="relative group">
+              <div key={`${favorite.type}-${favorite.itemId}`} className="relative group">
                 {/* Botão de remoção */}
                 <button
-                  onClick={() => handleRemoveFavorite(
-                    favorite.type, 
-                    favorite.activity_id || favorite.cartoon_id
-                  )}
+                  onClick={() => handleRemoveFavorite(favorite.type, favorite.itemId)}
                   className="absolute top-4 right-4 z-20 p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-all transform hover:scale-110"
                   title="Remover dos favoritos"
                 >
@@ -233,37 +342,7 @@ const FavoritesPage = () => {
                 {favorite.type === 'activity' ? (
                   <ActivityCard activity={item} />
                 ) : (
-                  <div className="card group cursor-pointer" onClick={() => {
-                    if (item.video_url) {
-                      window.open(item.video_url, '_blank')
-                    }
-                  }}>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-xl flex items-center justify-center text-2xl">
-                        📺
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 mb-1">{item.title}</h3>
-                        <p className="text-gray-600 text-sm line-clamp-2 mb-2">
-                          {item.description || 'Desenho animado educativo'}
-                        </p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>
-                            {item.min_age && item.max_age 
-                              ? `${item.min_age}-${item.max_age} anos`
-                              : 'Todas as idades'
-                            }
-                          </span>
-                          {item.duration && (
-                            <span>{item.duration} min</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play size={20} className="text-primary-500" />
-                      </div>
-                    </div>
-                  </div>
+                  <CartoonCard cartoon={item} compact={false} hideFavoriteButton={true} />
                 )}
 
                 {/* Data de adição */}
