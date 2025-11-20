@@ -37,7 +37,7 @@ const Header = () => {
               <div>
                 <p className="text-sm text-gray-600">{getGreeting()},</p>
                 <h1 className="text-lg font-bold text-gray-800">
-                  Brincadeiras {child?.name ? `para ${child.name}` : 'para sua criança'}! 👋
+                  Atividades {child?.name ? `para ${child.name}` : 'para sua criança'}! 👋
                 </h1>
               </div>
             </div>

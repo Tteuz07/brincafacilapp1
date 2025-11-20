@@ -104,3 +104,4 @@ Se os favoritos ainda não aparecem:
 2. **Verifique se há favoritos no Supabase** - execute a query SQL acima
 3. **Verifique se os IDs estão corretos** - compare `item_id` na tabela com os IDs das atividades/desenhos
 
+

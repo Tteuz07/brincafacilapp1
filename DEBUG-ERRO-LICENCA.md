@@ -114,3 +114,4 @@ A função usa `LOWER(user_email)`, então `dan@gmail.com` deve funcionar. Mas v
 - [ ] RLS está configurado corretamente na tabela `licencas`
 - [ ] Console do navegador mostra o erro detalhado
 
+

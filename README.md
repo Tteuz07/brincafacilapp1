@@ -353,7 +353,7 @@ Este projeto está sob a licença MIT. Veja o arquivo \`LICENSE\` para mais deta
 
 ## 📞 Suporte
 
-- Email: suporte@brincafacil.com
+- Email: brincafacil0@gmail.com
 - Issues: [GitHub Issues](https://github.com/seu-usuario/brincafacil-app/issues)
 
 ## 🎯 Roadmap

@@ -127,3 +127,4 @@ COMMENT ON FUNCTION buscar_perfil(TEXT) IS
 -- Teste buscar perfil:
 -- SELECT * FROM buscar_perfil('seu-email@exemplo.com');
 
+

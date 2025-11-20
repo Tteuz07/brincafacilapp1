@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { checkLicense } from '../utils/checkLicense';
+import { verificarSessao } from '../lib/supabaseClient';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{ ok: boolean; msg?: string; loading: boolean }>({
@@ -16,9 +17,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       console.log('[ProtectedRoute] Iniciando verificação...');
       setState(s => ({ ...s, loading: true }));
       
-      // ✅ PRIMEIRO: Verificar se há sessão do Supabase
-      const { supabase } = await import('../lib/supabaseClient');
-      const { data: { session } } = await supabase.auth.getSession();
+      // ✅ PRIMEIRO: Verificar se há sessão do Supabase usando função melhorada
+      const session = await verificarSessao();
       
       if (!session?.user) {
         console.log('[ProtectedRoute] ❌ Nenhuma sessão encontrada, redirecionando para /login...');

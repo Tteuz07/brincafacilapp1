@@ -79,5 +79,113 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export { supabase };
 
+// ============================================
+// FUNÇÕES DE PERSISTÊNCIA E GERENCIAMENTO DE SESSÃO
+// ============================================
 
+/**
+ * Inicializa o listener de mudanças de estado de autenticação
+ * Monitora eventos como TOKEN_REFRESHED, SIGNED_OUT, etc.
+ * @returns {object} Objeto com subscription para unsubscribe
+ */
+export function inicializarAuthListener() {
+  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔐 Auth Event:', event);
+    
+    if (event === 'TOKEN_REFRESHED') {
+      console.log('🔄 Token renovado automaticamente');
+    }
+    if (event === 'SIGNED_OUT') {
+      console.log('🚪 Logout realizado');
+    }
+    if (event === 'SIGNED_IN') {
+      console.log('✅ Login realizado');
+    }
+    if (event === 'USER_UPDATED') {
+      console.log('👤 Dados do usuário atualizados');
+    }
+  });
+  
+  return authListener;
+}
+
+/**
+ * Verifica se existe uma sessão ativa no Supabase
+ * @returns {Promise<Session|null>} Sessão ativa ou null se não houver
+ */
+export async function verificarSessao() {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('❌ Erro ao verificar sessão:', error);
+      return null;
+    }
+    
+    if (!session) {
+      console.log('⚠️ Nenhuma sessão encontrada');
+      return null;
+    }
+    
+    console.log('✅ Sessão encontrada:', {
+      user: session.user?.email,
+      expiresAt: new Date(session.expires_at * 1000).toLocaleString()
+    });
+    
+    return session;
+  } catch (error) {
+    console.error('❌ Erro ao verificar sessão:', error);
+    return null;
+  }
+}
+
+/**
+ * Renova a sessão se o token estiver próximo do vencimento
+ * Verifica se falta menos de 5 minutos para expirar e renova automaticamente
+ * @returns {Promise<Session|null>} Sessão renovada ou atual, ou null se não houver sessão
+ */
+export async function renovarSessaoSeNecessario() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return null;
+    }
+    
+    const expiresAt = session.expires_at;
+    const agora = Math.floor(Date.now() / 1000);
+    const tempoRestante = expiresAt - agora;
+    
+    // Se falta menos de 5 minutos (300 segundos), renova
+    if (tempoRestante < 300) {
+      console.log('⚠️ Token próximo do vencimento, renovando...', {
+        tempoRestante: `${Math.floor(tempoRestante / 60)} minutos`
+      });
+      
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        
+        if (error) {
+          console.error('❌ Erro ao renovar sessão:', error);
+          return session; // Retorna sessão atual mesmo com erro
+        }
+        
+        if (data?.session) {
+          console.log('✅ Token renovado com sucesso');
+          return data.session;
+        }
+      } catch (refreshError) {
+        console.error('❌ Erro ao tentar renovar sessão:', refreshError);
+        return session; // Retorna sessão atual em caso de erro
+      }
+    } else {
+      console.log('✅ Token ainda válido por mais', `${Math.floor(tempoRestante / 60)} minutos`);
+    }
+    
+    return session;
+  } catch (error) {
+    console.error('❌ Erro ao verificar renovação de sessão:', error);
+    return null;
+  }
+}
 

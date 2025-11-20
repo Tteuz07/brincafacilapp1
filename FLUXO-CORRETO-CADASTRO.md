@@ -115,3 +115,4 @@ status: 'pago'
 3. ✅ Sistema verifica licença na tabela `licencas`
 4. ✅ Se `pago`, libera acesso
 
+

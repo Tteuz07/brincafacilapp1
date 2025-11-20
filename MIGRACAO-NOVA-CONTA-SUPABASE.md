@@ -116,3 +116,4 @@ VITE_SUPABASE_ANON_KEY=sua-nova-chave-aqui
 
 - 🔐 **Segurança:** As políticas RLS estão configuradas para bloquear acesso direto às tabelas, usando apenas funções RPC.
 
+

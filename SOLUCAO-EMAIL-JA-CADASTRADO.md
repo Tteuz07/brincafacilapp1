@@ -111,3 +111,4 @@ Se o problema persistir, pode ser que:
 
 **Solução**: Verifique as credenciais no `.env` e certifique-se de que está usando a nova conta do Supabase!
 
+

@@ -232,7 +232,7 @@ const SupportPage = () => {
                       Tem ideias para melhorar o app? Envie suas sugestões e ajude-nos a crescer!
                     </p>
                     <p className="text-primary-500 text-sm font-semibold">
-                      Email: brincafacil@gmail.com
+                      Email: brincafacil0@gmail.com
                     </p>
                   </div>
                 </div>

@@ -65,3 +65,4 @@ GRANT EXECUTE ON FUNCTION verificar_licenca(TEXT) TO anon;
 COMMENT ON FUNCTION verificar_licenca(TEXT) IS 
 'Função segura para verificar se um usuário tem licença válida. Retorna apenas informações necessárias sem expor dados sensíveis da tabela licencas.';
 
+

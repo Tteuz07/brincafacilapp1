@@ -34,3 +34,4 @@ SELECT
 FROM public.licencas
 WHERE email LIKE '%h@gmail.com%';
 
+

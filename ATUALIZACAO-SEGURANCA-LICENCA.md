@@ -96,3 +96,4 @@ true   | ...  | 2024-...    | pago
 - A função é executada com `SECURITY DEFINER` para garantir acesso à tabela
 - As permissões são concedidas para `authenticated` e `anon` roles
 
+

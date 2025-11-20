@@ -65,3 +65,4 @@ SELECT
 FROM public.licencas
 ORDER BY updated_at DESC;
 
+

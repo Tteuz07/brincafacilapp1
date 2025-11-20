@@ -41,3 +41,4 @@ echo "1. Reinicie o servidor (Ctrl+C e depois npm run dev)"
 echo "2. Limpe o cache do navegador"
 echo "3. Atualize as credenciais na Vercel também!"
 
+

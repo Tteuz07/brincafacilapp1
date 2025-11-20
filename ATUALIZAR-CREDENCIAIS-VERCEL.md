@@ -65,3 +65,4 @@ Após o deploy, verifique:
 2. **Aguarde alguns minutos** (as variáveis podem levar tempo para propagar)
 3. **Verifique se as variáveis estão marcadas para Production**
 
+

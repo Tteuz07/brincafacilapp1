@@ -147,3 +147,4 @@ WHERE table_schema = 'public'
   AND table_name = 'atividades_historico'
   AND constraint_type = 'CHECK';
 
+

@@ -110,3 +110,4 @@ SELECT * FROM perfis_criancas WHERE email_usuario = 'email-do-usuario@exemplo.co
 2. Verifique os logs no console
 3. Se ainda não funcionar, compartilhe os logs para debug adicional
 
+

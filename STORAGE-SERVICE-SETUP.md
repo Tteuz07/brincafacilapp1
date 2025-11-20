@@ -191,3 +191,4 @@ SELECT * FROM buscar_perfil('seu-email@exemplo.com');
 3. Testar migração de dados existentes
 4. Considerar usar Supabase Storage para fotos grandes
 
+

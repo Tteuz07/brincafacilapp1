@@ -111,3 +111,4 @@ Se ainda houver erros:
 - [ ] Script SQL executado no Supabase (você precisa fazer isso)
 - [ ] Teste realizado
 
+

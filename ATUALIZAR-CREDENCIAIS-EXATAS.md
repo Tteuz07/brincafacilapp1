@@ -54,3 +54,4 @@ npm run dev
 - **Compare CARACTERE POR CARACTERE**
 - **Atualize em TODOS os lugares** (.env, código, Vercel)
 
+

@@ -138,3 +138,4 @@ WHERE table_schema = 'public'
   AND table_name IN ('atividades_historico', 'perfis_criancas', 'favoritos')
 ORDER BY table_name, ordinal_position;
 
+

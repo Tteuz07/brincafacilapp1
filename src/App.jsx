@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import useAppStore from './store/useAppStore'
+import { inicializarAuthListener, verificarSessao, renovarSessaoSeNecessario } from './lib/supabaseClient'
 
 // Components
 import Layout from './components/Layout/Layout'
@@ -38,6 +39,49 @@ function App() {
 
   const [isLoading, setIsLoading] = useState(true)
 
+  // ============================================
+  // MELHORIAS DE PERSISTÊNCIA DE LOGIN
+  // ============================================
+  useEffect(() => {
+    // Inicializar listener de mudanças de autenticação
+    const authListener = inicializarAuthListener();
+    
+    // Verificar sessão inicial
+    async function init() {
+      try {
+        const session = await verificarSessao();
+        if (session?.user) {
+          console.log('✅ Sessão encontrada na inicialização, carregando usuário...');
+          setUser(session.user);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao verificar sessão inicial:', error);
+      }
+    }
+    init();
+    
+    // Verificação periódica a cada 5 minutos para renovar token se necessário
+    const intervalo = setInterval(() => {
+      renovarSessaoSeNecessario().then((session) => {
+        if (session?.user) {
+          // Atualizar usuário no store se a sessão foi renovada
+          setUser(session.user);
+        }
+      }).catch((error) => {
+        console.error('❌ Erro na renovação periódica:', error);
+      });
+    }, 5 * 60 * 1000); // 5 minutos
+    
+    // Cleanup
+    return () => {
+      clearInterval(intervalo);
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [setUser]);
+
+  // ============================================
+  // CÓDIGO EXISTENTE - VERIFICAÇÃO DE SESSÃO
+  // ============================================
   useEffect(() => {
     const checkSession = async () => {
       try {

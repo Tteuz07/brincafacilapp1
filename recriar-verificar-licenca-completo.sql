@@ -91,3 +91,4 @@ SELECT * FROM verificar_licenca('H@GMAIL.COM');
 SELECT * FROM verificar_licenca(' h@gmail.com ');
 -- Resultado esperado: valido=true, status='pago' (deve funcionar mesmo com espaços)
 
+

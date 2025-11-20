@@ -47,3 +47,4 @@ POST /rest/v1/rpc/verificar_licenca
 GET /rest/v1/licencas?select=status&email=eq...
 ```
 
+

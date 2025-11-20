@@ -400,3 +400,4 @@ ORDER BY tablename, policyname;
 -- Se tudo executou sem erros, o setup está completo!
 -- Agora atualize as credenciais no código (.env e Vercel)
 
+

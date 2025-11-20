@@ -21,3 +21,4 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 - O arquivo `.env` não deve ser commitado no Git (já está no .gitignore)
 - Para produção, use as variáveis de ambiente na Vercel
 
+

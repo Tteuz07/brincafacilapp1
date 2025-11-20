@@ -104,3 +104,4 @@ status: 'pago'
 - Execute novamente o script `SETUP-COMPLETO-NOVA-CONTA.sql`
 - Verifique se a função foi criada: `SELECT * FROM verificar_licenca('h@gmail.com');`
 
+

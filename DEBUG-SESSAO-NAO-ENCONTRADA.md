@@ -68,3 +68,4 @@ Após fazer login, verifique no console:
 
 O sistema deve redirecionar automaticamente para `/login` após 1.5 segundos. Se não redirecionar, pode ser um problema de JavaScript bloqueado ou erro no código.
 
+

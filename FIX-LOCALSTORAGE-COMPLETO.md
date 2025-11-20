@@ -95,3 +95,4 @@ Removido COMPLETAMENTE o uso de LocalStorage para dados do usuário. Agora usa A
 
 Agora cada usuário tem seus dados completamente isolados no Supabase. Não há mais risco de um usuário ver dados de outro usuário no mesmo navegador.
 
+

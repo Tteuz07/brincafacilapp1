@@ -72,3 +72,4 @@ SELECT COUNT(*) as total_usuarios FROM auth.users;
 
 -- Se retornar 0, todos os usuários foram deletados
 
+

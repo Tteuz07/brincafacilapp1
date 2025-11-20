@@ -95,3 +95,4 @@ localStorage.getItem('bf_onboarding_done')
 
 **Tabela no Supabase:** `perfis_criancas`
 
+

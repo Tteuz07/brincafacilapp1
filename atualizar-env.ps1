@@ -45,3 +45,4 @@ Write-Host "1. Reinicie o servidor (Ctrl+C e depois npm run dev)" -ForegroundCol
 Write-Host "2. Limpe o cache do navegador (Ctrl+Shift+Delete)" -ForegroundColor White
 Write-Host "3. Atualize as credenciais na Vercel também!" -ForegroundColor White
 
+

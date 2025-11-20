@@ -39,3 +39,4 @@ WHERE email = 'teste@gmail.com';
 
 SELECT COUNT(*) as total_usuarios FROM auth.users;
 
+

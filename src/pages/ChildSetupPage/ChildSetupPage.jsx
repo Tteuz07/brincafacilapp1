@@ -19,13 +19,13 @@ const ChildSetupPage = () => {
     likes: '',
     challenges: '',
     hasSpecialNeeds: false,
-    avatar: '👶' // avatar padrão
+    avatar: '👦' // avatar padrão
   })
 
-  // Lista de avatares disponíveis (2 fileiras)
+  // Lista de avatares disponíveis (masculino e feminino)
   const avatares = [
-    '👶', '🧒', '👦', '👧', '👨', '👩', 
-    '🐻', '🐰', '🐶', '🐱', '🦁', '🐯'
+    { id: 'masculino', emoji: '👦', label: 'Menino' },
+    { id: 'feminino', emoji: '👧', label: 'Menina' }
   ]
 
   const handleSubmit = async (e) => {
@@ -139,24 +139,25 @@ const ChildSetupPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Escolha um avatar
               </label>
-              <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                 {avatares.map((avatar) => (
                   <button
-                    key={avatar}
+                    key={avatar.id}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, avatar }))}
-                    className={`text-3xl p-2 rounded-lg transition-all ${
-                      formData.avatar === avatar
-                        ? 'bg-orange-500 scale-110 shadow-md ring-2 ring-orange-300'
-                        : 'bg-white hover:bg-orange-100 hover:scale-105'
+                    onClick={() => setFormData(prev => ({ ...prev, avatar: avatar.emoji }))}
+                    className={`text-4xl p-3 rounded-lg transition-all border-2 ${
+                      formData.avatar === avatar.emoji
+                        ? 'bg-orange-500 scale-110 shadow-md ring-2 ring-orange-300 border-orange-500'
+                        : 'bg-white hover:bg-orange-100 hover:scale-105 border-gray-200'
                     }`}
+                    title={avatar.label}
                   >
-                    {avatar}
+                    {avatar.emoji}
                   </button>
                 ))}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Avatar selecionado: <span className="text-2xl">{formData.avatar}</span>
+                Avatar selecionado: <span className="text-2xl">{formData.avatar}</span> - {avatares.find(a => a.emoji === formData.avatar)?.label || 'Nenhum'}
               </p>
             </div>
 

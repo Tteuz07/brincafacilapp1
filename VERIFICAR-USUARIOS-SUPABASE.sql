@@ -50,3 +50,4 @@ SELECT
 FROM public.licencas
 WHERE email = 'teste@gmail.com';
 
+
